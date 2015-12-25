@@ -114,6 +114,10 @@ void ofApp::draw(){
     
     /* ホモグラフィの基準点を描写 */
     homography.drawPoints(homography.srcPoints);
+    /* fps書き出し */
+    double fps = ofGetFrameRate();
+    string fpsString = "fps : " + ofToString(fps);
+    ofDrawBitmapString(fpsString, 10, 10);
 }
 
 //--------------------------------------------------------------
