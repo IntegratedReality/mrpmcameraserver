@@ -10,7 +10,8 @@
 constexpr int camwidth = 448;
 constexpr int camheight = 336;
 constexpr int cam_margin = 30;
-const int BUF_LABEL=1024;
+const int BUF_LABEL=1024;   //raspiでは領域の再確保が発生するとセグフォ起こしたので大きめに取っておく
+const int region = 512;     //ラベリングから受け取る点の最大値(実際の運用時は30とか？)
 
 class imageProcess{
     public :
@@ -29,9 +30,10 @@ class imageProcess{
     /* for labeling */
     
     int num = 0;
+    int previous_num = region;  //一個前のラベル数を保存
     cv::Mat_<int> labels = cv::Mat_<int>::zeros(camheight,camwidth);
     cv::Mat bin_mat;    //ofとCVの変換(ラッパー)用
-    ofVec3f center_point[512];       //ラベリングされた領域の重心を保管する (x,y,アクティブor非アクティブ)
+    ofVec3f center_point[region];       //ラベリングされた領域の重心を保管する (x,y,アクティブor非アクティブ)
     void writePoints();
     
     /* flags */
@@ -87,7 +89,7 @@ class labelingClass{
     
     inline unsigned int getAt(const cv::Mat& img,int x,int y)
     {
-        return int(img.data[y*img.step + x]);
+        return int(img.data[y*img.step + x]);   //dataはキャストしないと取れないっぽい
     }
     
     //aの属すグループの代表に向かって経路圧縮（代表を返す）
@@ -128,6 +130,78 @@ class labelingClass{
     
     int labeling(const cv::Mat& image,cv::Mat_<int>& label);
     
+};
+
+class k_means {
+    public :
+    const int NOT_USED = 128;    //数字は適当
+    static const int NUM_OF_CLUSTERS = 8;   // 分類するクラスタ数(=ロボットの数)
+    
+    ofVec2f clusterPositions[NUM_OF_CLUSTERS];     //各クラスタの中心座標(=ロボットの座標)
+    //std::vector<ofVec2f> clusterInfo[NUM_OF_CLUSTERS];     //各点がどのクラスタに属するか
+    ofVec3f inputPoints[NUM_OF_CLUSTERS * 3];     //入力点の情報 zはどのクラスタに属するかを入れる
+    bool finished = 1;  //収束したかどうかのフラグ
+    
+    inline double distance(ofVec3f input, ofVec2f clusterPoint){
+        return sqrt((input.x - clusterPoint.x)*(input.x - clusterPoint.x) + (input.y - clusterPoint.y)*(input.y - clusterPoint.y));
+        //重かったらマンハッタン距離にするかも
+    }
+    
+    void getInputData(ofVec3f *input){
+        for (int i = 0; i < NUM_OF_CLUSTERS*3; i++){
+            if (inputPoints[i].z == 0){  //使われていない領域は無視(z=0は非アクティブのもの)
+                inputPoints[i].z = NOT_USED;
+                break;
+            }
+            inputPoints[i] = input[i+1];  //入力はcenter_point[]なので1から始める
+            inputPoints[i].z = 0;
+        }
+    }
+    
+    /* 所属するクラスタを探す */
+    void belonging(){
+        finished = 1;   //終わったかどうかのフラグ、まだ変更された点があれば最後に0にする
+        for (int i = 0; i < NUM_OF_CLUSTERS * 3; i++){
+            /* 最短の点を探す */
+            int result = 0;
+            double current_min = distance(inputPoints[i], clusterPositions[0]);   //とりあえず0番に所属させとく
+            if (inputPoints[i].z == NOT_USED){
+                break;      //入力が3 * 8より少ない場合の処理 途中でNOT_USEDに出くわしたらbreakする
+            }
+            
+            for (int j = 1; j < NUM_OF_CLUSTERS; j++){
+                double dist = distance(inputPoints[i], clusterPositions[j]);
+                if (current_min > dist){
+                    current_min = dist;
+                    result = j;
+                }
+            }
+            /* 所属を変更 */
+            if (inputPoints[i].z != result){
+                inputPoints[i].z = result;
+                finished = 0;   //所属が変わる点がある場合はまだ終わっていない
+            }
+        }
+    }
+    
+    void update(){      //重心からクラスタの中心を変更
+        int x[NUM_OF_CLUSTERS*3] = {};
+        int y[NUM_OF_CLUSTERS*3] = {};
+        int counter[NUM_OF_CLUSTERS] = {};
+        for (int i = 0; i < NUM_OF_CLUSTERS*3; i++){
+            if (inputPoints[i].z == NOT_USED){
+                x[static_cast<int>(inputPoints[i].z)] /= i+1;
+                y[static_cast<int>(inputPoints[i].z)] /= i+1;
+                break;      //入力が3 * 8より少ない場合の処理 途中でNOT_USEDに出くわしたらbreakする
+            }
+            x[static_cast<int>(inputPoints[i].z)] += inputPoints[i].x;
+            y[static_cast<int>(inputPoints[i].z)] += inputPoints[i].y;
+            if (i == (NUM_OF_CLUSTERS*3 - 1)){
+                x[static_cast<int>(inputPoints[i].z)] /= (NUM_OF_CLUSTERS*3);
+                y[static_cast<int>(inputPoints[i].z)] /= (NUM_OF_CLUSTERS*3);
+            }
+        }
+    }
 };
 
 class ofApp : public ofBaseApp{

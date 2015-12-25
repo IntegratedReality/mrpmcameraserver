@@ -44,23 +44,35 @@ void ofApp::update(){
         }
         
         /***** labeling~ *****/
-        
         improcess.bin_mat = ofxCv::toCv(improcess.bin);
         improcess.num = labeling.labeling(improcess.bin_mat, improcess.labels);       //ラベリング実行
         
         /* 各ラベルの重心を求める */
-        for (int i = 0; i < improcess.labels.rows; i++){
-            for (int j = 0; j < improcess.labels.cols; j++){
-                improcess.center_point[improcess.labels(i,j)] = ofVec3f(0,0,0);     //重心を入れる配列をリセット(改善の余地あり？)
-            }
+//        for (int i = 0; i < improcess.labels.rows; i++){
+//            for (int j = 0; j < improcess.labels.cols; j++){
+//                improcess.center_point[improcess.labels(i,j)] = ofVec3f(0,0,0);     //重心を入れる配列をリセット(改善の余地あり？)
+//            }
+//        } //間違ってたやつ(一応残してる)
+        
+        /* 初期化(前回埋めたところだけ消去して節約) */
+        if (improcess.previous_num >= region){  //下で初期化するときに変な領域に入らないように制限
+            improcess.previous_num = region-1;
         }
-        int temp;
+        for (int i = 0; i <= improcess.previous_num; i++){
+            improcess.center_point[i] = ofVec3f(0,0,0);     //重心を入れる配列をリセット
+        }
+        improcess.previous_num = improcess.num;
+        /* 初期化終了 */
+        
+        int region_number;      //ラベル番号を一時的に保存
         for (int i = 0; i < improcess.labels.rows; i++){
             for (int j = 0; j < improcess.labels.cols; j++){
-                temp = improcess.labels(i,j);          //画素アクセスの回数を減らすために退避した
-                improcess.center_point[temp].x += j;
-                improcess.center_point[temp].y += i;
-                improcess.center_point[temp].z += 1;   //足した回数を記憶(後で割る)
+                region_number = improcess.labels(i,j);          //画素アクセスの回数を減らすために退避した
+                if(region_number != 0){
+                improcess.center_point[region_number].x += j;
+                improcess.center_point[region_number].y += i;
+                improcess.center_point[region_number].z += 1;   //足した回数を記憶(後で割る)
+                }
             }
         }
         for (int i = 1; i < improcess.num; i++){
@@ -68,7 +80,9 @@ void ofApp::update(){
                 improcess.center_point[i].x /= (improcess.center_point[i].z + 1);     // 重心を求めるために割り算  +1は0から足した分を補正している
                 improcess.center_point[i].y /= (improcess.center_point[i].z + 1);
             }
-            else improcess.center_point[i].z = 0;     //アクティブでないものを見分ける(z = 0 : 非アクティブ)
+            else {
+                improcess.center_point[i].z = 0;    //アクティブでないものを見分ける(z = 0 : 非アクティブ)
+            }
         }
         
         /***** ~labeling *****/
