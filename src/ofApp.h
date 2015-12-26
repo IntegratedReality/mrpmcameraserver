@@ -148,7 +148,7 @@ class k_means {
     }
     
     void getInputData(ofVec3f *input){
-        for (int i = 0; i < NUM_OF_CLUSTERS*3; i++){
+        for (int i = 0; i < NUM_OF_CLUSTERS*3; i++){    //ロボット * 3
             if (inputPoints[i].z == 0){  //使われていない領域は無視(z=0は非アクティブのもの)
                 inputPoints[i].z = NOT_USED;
                 break;
