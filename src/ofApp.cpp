@@ -124,7 +124,14 @@ void ofApp::draw(){
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
-
+    if (key > 0 && key < 9){
+        marker[key].marker_initializing = true;
+        for (int i = 0; i < 8; i ++){
+            if (marker[i].marker_initializing == true && i != key){     //連続で番号を押した時のための処理
+                marker[i].marker_initializing = false;
+            }
+        }
+    }
 }
 
 //--------------------------------------------------------------

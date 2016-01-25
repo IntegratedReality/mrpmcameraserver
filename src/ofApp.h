@@ -6,12 +6,43 @@
 #include <cmath>
 #include <vector>
 #include <typeinfo>
+#include <string>
 
 constexpr int camwidth = 448;
 constexpr int camheight = 336;
 constexpr int cam_margin = 30;
 const int BUF_LABEL=1024;   //raspiでは領域の再確保が発生するとセグフォ起こしたので大きめに取っておく
 const int region = 512;     //ラベリングから受け取る点の最大値(実際の運用時は30とか？)
+
+class markerInfo{  //マーカーの座標などを保管しておく
+    public :
+    ofVec2f point[3];   //マーカーの頂点座標(先端を0番とし、時計回りにする)
+    ofVec2f prev_point[3];  //前のフレームのマーカー位置
+    ofVec2f velocity;   //1フレーム辺りの速度
+    double angle;   //マーカーの方向(値は tan x とする)
+    bool marker_initializing = false;   //マーカーの初期化中かどうか(ドラッグで領域を選択するため、イベントを区別)
+    
+    inline void calcAngle(ofVec2f front,ofVec2f marker_center){   //角度算出
+        angle = (front.x - marker_center.x) / (front.y - marker_center.y);
+    }
+    inline void calcVelocity(ofVec2f currentPoint, ofVec2f previousPoint){  //速度算出
+        velocity.x = currentPoint.x - previousPoint.x;
+        velocity.y = currentPoint.x - previousPoint.x;
+    }
+    void init(ofVec2f point1, ofVec2f point2, ofVec3f *markerPoints){    //個体を認識するため、3つの点が含まれる領域を設定
+        /* 長方形の領域を設定する。引数は左上と右下の二点の座標 markerPointsは全てのledの座標(3×8個になるはず) */
+        int counter = 0;    //検出された個数を保持
+        for (int i = 0; i < sizeof(markerPoints) / sizeof(markerPoints[0]); i++){
+            if (markerPoints[i].x > point1.x && markerPoints[i].x < point2.x && markerPoints[i].y < point1.y && markerPoints[i].y > point2.y){
+                point[counter] = markerPoints[i];
+                counter ++;
+            }
+        }
+        if (counter != 3){
+            cout << "error" << endl;    //(仮)coutでエラー表示しておく
+        }
+    }
+};
 
 class imageProcess{
     public :
@@ -220,7 +251,10 @@ class ofApp : public ofBaseApp{
 		void mouseReleased(int x, int y, int button);
     
         /* for cam input */
-          ofVideoGrabber myCam;
+        ofVideoGrabber myCam;
+    
+        /* for marker */
+        markerInfo marker[8];
     
         /* classes */
         imageProcess improcess;
