@@ -124,7 +124,7 @@ void ofApp::draw(){
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
-    if (key > 0 && key < 9){
+    if (key > 0 && key < 9){    //機体の数なので1~8
         marker[key].marker_initializing = true;
         for (int i = 0; i < 8; i ++){
             if (marker[i].marker_initializing == true && i != key){     //連続で番号を押した時のための処理
@@ -141,7 +141,14 @@ void ofApp::keyReleased(int key){
 
 //--------------------------------------------------------------
 void ofApp::mouseMoved(int x, int y ){
-
+    for (int i = 0; i < 8; i++){
+        if (marker[i].marker_initializing == true){
+            marker[i].mouse_position->x = x;
+            marker[i].mouse_position->y = y;
+            marker[i].drawRegion();
+            break;
+        }
+    }
 }
 
 //--------------------------------------------------------------
@@ -162,7 +169,7 @@ void ofApp::mousePressed(int x, int y, int button){
             cv::Point2f cur(x - cam_margin, y - cam_margin);
             homography.srcPoints.push_back(cur);
         }
-        if (homography.first && homography.srcPoints.size() == 4){     //set destination points
+        else if (homography.first && homography.srcPoints.size() == 4){     //set destination points
             
             homography.warpedPoints.push_back(cv::Point2f(50,50));
             homography.warpedPoints.push_back(cv::Point2f(50,50) + cv::Point2f(0,250));
@@ -176,6 +183,17 @@ void ofApp::mousePressed(int x, int y, int button){
             homography.first = false;      //skip after the first loop
         }
     }
+    for (int i = 0; i < 8; i++){
+        if (marker[i].marker_initializing == true){
+            marker[i].init_region[marker[i].pointSet] = ofVec2f(x - cam_margin,y - cam_margin - camheight);
+            if (marker[i].pointSet == 1){
+                marker[i].init(improcess.center_point);
+                break;
+            }
+            marker[i].pointSet ++;
+            break;
+        }
+    }
 }
 
 //--------------------------------------------------------------
@@ -183,6 +201,30 @@ void ofApp::mouseReleased(int x, int y, int button){
     homography.movingPoint = false;
 }
 //--------------------------------------------------------------
+
+void markerInfo::init( ofVec3f *markerPoints){    //個体を認識するため、3つの点が含まれる領域を設定
+    /* 長方形の領域を設定する。引数は左上と右下の二点の座標 markerPointsは全てのledの座標(3×8個になるはず) */
+    int counter = 0;    //検出された個数を保持
+    /* 画像上の座標に変換 */
+    for (int i = 0; i < sizeof(markerPoints) / sizeof(markerPoints[0]); i++){
+        /* 領域内の点をpoint[3]に書き込む */
+        if (markerPoints[i].x > init_region[0].x && markerPoints[i].x < init_region[1].x && markerPoints[i].y > init_region[0].y && markerPoints[i].y < init_region[1].y){
+            point[counter] = markerPoints[i];
+            counter ++;
+        }
+    }
+    if (counter != 3){
+        cout << "error" << endl;    //(仮)coutでエラー表示しておく
+    }
+    marker_initializing = false;
+}
+void markerInfo::drawRegion(){
+    ofSetColor(30,30,150,70);
+    ofFill();
+    ofDrawRectangle(init_region[0].x, init_region[0].y, mouse_position->x - init_region[0].x, mouse_position->y - init_region[0].y);
+    ofSetColor(255);
+    ofNoFill();
+}
 
 void homographyClass::drawPoints(vector<cv::Point2f>& points) {
     ofNoFill();
@@ -195,8 +237,10 @@ void homographyClass::drawPoints(vector<cv::Point2f>& points) {
 }
 
 bool homographyClass::movePoint(vector<cv::Point2f>& points, cv::Point2f point) {
+    point.x -= cam_margin;
+    point.y -= cam_margin;
     for(int i = 0; i < points.size(); i++) {
-        if(distance(points[i],point) < 60) {    //本当はmargin分の調整をすべき(めんどくさい)
+        if(distance(points[i],point) < 60) {
             movingPoint = true;
             curPoint = &points[i];
             return true;

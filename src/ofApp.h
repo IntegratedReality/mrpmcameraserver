@@ -16,32 +16,30 @@ const int region = 512;     //ラベリングから受け取る点の最大値(�
 
 class markerInfo{  //マーカーの座標などを保管しておく
     public :
+    /* 座標関連 */
     ofVec2f point[3];   //マーカーの頂点座標(先端を0番とし、時計回りにする)
     ofVec2f prev_point[3];  //前のフレームのマーカー位置
+    ofVec2f marker_center;  //3点の重心位置
+    ofVec2f prev_marker_center; //前のフレームの重心位置
     ofVec2f velocity;   //1フレーム辺りの速度
     double angle;   //マーカーの方向(値は tan x とする)
-    bool marker_initializing = false;   //マーカーの初期化中かどうか(ドラッグで領域を選択するため、イベントを区別)
     
+    /* 領域指定用 */
+    bool marker_initializing = false;   //マーカーの初期化中かどうか(ドラッグで領域を選択するため、イベントを区別)
+    int pointSet = 0;   //領域指定の時の一時的な変数
+    ofVec2f init_region[2]; //指定する領域の左上、右下の座標を保管
+    ofVec2f *mouse_position;    //描画用に領域指定中のマウス位置を保管
+    
+    /* 関数 */
     inline void calcAngle(ofVec2f front,ofVec2f marker_center){   //角度算出
         angle = (front.x - marker_center.x) / (front.y - marker_center.y);
     }
-    inline void calcVelocity(ofVec2f currentPoint, ofVec2f previousPoint){  //速度算出
-        velocity.x = currentPoint.x - previousPoint.x;
-        velocity.y = currentPoint.x - previousPoint.x;
+    inline void calcVelocity(){  //速度算出
+        velocity.x = marker_center.x - prev_marker_center.x;
+        velocity.y = marker_center.y - prev_marker_center.y;
     }
-    void init(ofVec2f point1, ofVec2f point2, ofVec3f *markerPoints){    //個体を認識するため、3つの点が含まれる領域を設定
-        /* 長方形の領域を設定する。引数は左上と右下の二点の座標 markerPointsは全てのledの座標(3×8個になるはず) */
-        int counter = 0;    //検出された個数を保持
-        for (int i = 0; i < sizeof(markerPoints) / sizeof(markerPoints[0]); i++){
-            if (markerPoints[i].x > point1.x && markerPoints[i].x < point2.x && markerPoints[i].y < point1.y && markerPoints[i].y > point2.y){
-                point[counter] = markerPoints[i];
-                counter ++;
-            }
-        }
-        if (counter != 3){
-            cout << "error" << endl;    //(仮)coutでエラー表示しておく
-        }
-    }
+    void init(ofVec3f *markerPoints);   //個体を認識するため、3つの点が含まれる領域を設定
+    void drawRegion();
 };
 
 class imageProcess{
