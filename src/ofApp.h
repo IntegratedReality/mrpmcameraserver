@@ -13,6 +13,7 @@ constexpr int camheight = 336;
 constexpr int cam_margin = 30;
 const int BUF_LABEL=1024;   //raspiでは領域の再確保が発生するとセグフォ起こしたので大きめに取っておく
 const int region = 512;     //ラベリングから受け取る点の最大値(実際の運用時は30とか？)
+const int min_region = 10;   //ラベリングの際にこの数値以下の小さい領域は無視する(ノイズ除去のため)
 
 class markerInfo{  //マーカーの座標などを保管しておく
     public :

@@ -183,7 +183,7 @@ void ofApp::mouseDragged(int x, int y, int button){
 //--------------------------------------------------------------
 void ofApp::mousePressed(int x, int y, int button){
     cv::Point2f cur(x , y);
-    if (!homography.movePoint(homography.srcPoints,cur) && y < cam_margin + camheight + 10){
+    if (!homography.movePoint(homography.srcPoints,cur) && y < cam_margin + camheight + 10){    //10は念のために余分に取っただけ
         if (homography.srcPoints.size() < 4){   //4点未満の時しかpush_backはしない
             cv::Point2f cur(x - cam_margin, y - cam_margin);
             homography.srcPoints.push_back(cur);
@@ -236,7 +236,7 @@ void markerInfo::init(ofVec3f *markerPoints){    //個体を認識するため�
 //    cout << "size (array) : " << sizeof(*markerPoints)<< endl;
 //    cout << "size (hitotsu) : " << sizeof(markerPoints[1]) << endl;
     for (int i = 0; i < region; i++){   //最大数までループ
-        if (markerPoints[i].z < 10){
+        if (markerPoints[i].z < min_region){
             /* 上と整合性を取って10以下の大きさの領域は無視する */
             continue;
         }
@@ -335,7 +335,7 @@ void labelingClass::drawRegions(ofVec3f* center_points, int num){
     ofSetColor(130, 130, 230);
     ofFill();
     for (int i = 0; i < num; i++){
-        if (center_points[i].z > 10){    //簡易的なローパスフィルタ(小さい画素は無視)
+        if (center_points[i].z > min_region){    //簡易的なローパスフィルタ(小さい画素は無視)
             ofDrawCircle(cam_margin + center_points[i].x, cam_margin + camheight + center_points[i].y, 5);
         }
     }
