@@ -1,7 +1,9 @@
 #include "ofApp.h"
 
 /* スタティック変数の定義 */
-int markerInfo::pointSet;
+int markerInfo::pointSet = 0;
+bool markerInfo::drawing = false;
+ofVec2f markerInfo::mouse_position;
 
 //--------------------------------------------------------------
 void ofApp::setup(){
@@ -66,12 +68,12 @@ void ofApp::update(){
             improcess.center_point[i] = ofVec3f(0,0,0);     //重心を入れる配列をリセット
         }
         improcess.previous_num = improcess.num;
-        /* 初期化終了 */
+        /* ~初期化終了 */
         
         int region_number;      //ラベル番号を一時的に保存
         for (int i = 0; i < improcess.labels.rows; i++){
             for (int j = 0; j < improcess.labels.cols; j++){
-                region_number = improcess.labels(i,j);          //画素アクセスの回数を減らすために退避した
+                region_number = improcess.labels(i,j);          //画素アクセスの回数を減らすために退避
                 if(region_number != 0){
                 improcess.center_point[region_number].x += j;
                 improcess.center_point[region_number].y += i;
@@ -122,11 +124,14 @@ void ofApp::draw(){
     }
     
     /* マーカーの初期化領域を描画 */
-//    for (int i = 0; i < 8; i++){
-//        if (marker[i].marker_initializing == true){
-//            //marker[i].drawRegion();
-//        }
-//    }
+    if (marker[0].drawing){
+        for (int i = 0; i < 8; i++){
+            if (marker[i].marker_initializing == true){
+                //cout << "debug1" << endl;
+                marker[i].drawRegion();
+            }
+        }
+    }
     
     /* fps書き出し */
     double fps = ofGetFrameRate();
@@ -136,11 +141,14 @@ void ofApp::draw(){
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
-    if (key > 0 && key < 9){    //機体の数なので1~8
-        marker[key].marker_initializing = !marker[key].marker_initializing; //bool反転
-        cout << "initializing marker[" << key << "]" << endl;
+    //cout << "key" << key << endl;
+    int num = key - 48;
+    if (num > 0 && num < 9){    //機体の数なので1~8
+        //cout << "debug2" <<endl;
+        marker[num].marker_initializing = !marker[num].marker_initializing; //bool反転
+        cout << "initializing marker[" << num << "]" << endl;
         for (int i = 0; i < 8; i ++){
-            if (marker[i].marker_initializing == true && i != key){     //連続で別の番号を押した時のための処理
+            if (marker[i].marker_initializing == true && i != num){     //連続で別の番号を押した時のための処理
                 marker[i].marker_initializing = false;
             }
         }
@@ -154,13 +162,12 @@ void ofApp::keyReleased(int key){
 
 //--------------------------------------------------------------
 void ofApp::mouseMoved(int x, int y ){
-//    for (int i = 0; i < 8; i++){
-//        if (marker[i].marker_initializing == true){
-//            marker[i].mouse_position->x = x;
-//            marker[i].mouse_position->y = y;
-//            break;
-//        }
-//    }
+    if (marker[0].drawing){
+        //cout << "debug3" << endl;
+        marker[0].mouse_position.x = x;    //staticなのでindexは何でもOK
+        marker[0].mouse_position.y = y;
+        //cout << "value : " << marker[0].mouse_position.x << endl;
+    }
 }
 
 //--------------------------------------------------------------
@@ -168,7 +175,6 @@ void ofApp::mouseDragged(int x, int y, int button){
     if(homography.movingPoint) {
         homography.curPoint->x = x - cam_margin;
         homography.curPoint->y = y - cam_margin;
-        cout << "x : " << x << endl;
         
         homography.homographyMat = cv::findHomography(homography.srcPoints, homography.warpedPoints);
     }
@@ -177,11 +183,10 @@ void ofApp::mouseDragged(int x, int y, int button){
 //--------------------------------------------------------------
 void ofApp::mousePressed(int x, int y, int button){
     cv::Point2f cur(x , y);
-    if (!homography.movePoint(homography.srcPoints,cur)){
+    if (!homography.movePoint(homography.srcPoints,cur) && y < cam_margin + camheight + 10){
         if (homography.srcPoints.size() < 4){   //4点未満の時しかpush_backはしない
             cv::Point2f cur(x - cam_margin, y - cam_margin);
             homography.srcPoints.push_back(cur);
-            cout << "debug1" << endl;
         }
         if (homography.first && static_cast<int>(homography.srcPoints.size()) == 4){     //set destination points
             
@@ -195,25 +200,28 @@ void ofApp::mousePressed(int x, int y, int button){
             
             homography.homographyReady = true;     //ホモグラフィ完了フラグ
             homography.first = false;      //skip after the first loop
-            cout << "debug2" <<  endl;
         }
     }
     /* マーカー認識領域の設定 */
     /* 長方形領域の二点(init_region[])を指定する、pointSet(staticメンバ)が一時的なインデックスになる */
-//    for (int i = 0; i < 8; i++){
-//        if (marker[i].marker_initializing == true){
-//            /* 画像上の座標に変換(右辺) */
-//            marker[i].init_region[marker[0].pointSet] = ofVec2f(x - cam_margin,y - cam_margin - camheight);
-//            if (marker[0].pointSet == 1){
-//                marker[i].init(improcess.center_point);
-//                marker[0].pointSet = 0; //1の次は0に戻しておく(0 or 1 の２つ)
-//                marker[i].marker_initializing = false;  //設定終了
-//                break;
-//            }
-//            marker[i].pointSet ++;
-//            break;
-//        }
-//    }
+    for (int i = 0; i < 8; i++){
+        if (marker[i].marker_initializing == true && y > cam_margin + camheight - 10){
+            marker[0].drawing = true;
+            /* 画像上の座標に変換(右辺) */
+            cout << "marker[0].pointSet : " << marker[0].pointSet << endl;
+            marker[i].init_region[marker[0].pointSet] = ofVec2f(x - cam_margin,y - cam_margin - camheight);
+            marker[0].mouse_position = ofVec2f(x - cam_margin + 1, y - cam_margin - camheight + 1); //領域選択の際に指定する二点目を仮に入れておく
+            if (marker[0].pointSet == 1){
+                marker[i].init(improcess.center_point);
+                marker[0].pointSet = 0; //1の次は0に戻しておく(0 or 1 の２つ)
+                marker[i].marker_initializing = false;  //設定終了
+                marker[i].drawing = false;
+                break;
+            }
+            marker[i].pointSet ++;
+            break;
+        }
+    }
 }
 
 //--------------------------------------------------------------
@@ -225,23 +233,36 @@ void ofApp::mouseReleased(int x, int y, int button){
 void markerInfo::init(ofVec3f *markerPoints){    //個体を認識するため、3つの点が含まれる領域を設定
     /* 長方形の領域を設定する。引数は左上と右下の二点の座標 markerPointsは全てのledの座標(3×8個になるはず) */
     int counter = 0;    //検出された個数を保持
-    
-    for (int i = 0; i < sizeof(markerPoints) / sizeof(markerPoints[0]); i++){
+//    cout << "size (array) : " << sizeof(*markerPoints)<< endl;
+//    cout << "size (hitotsu) : " << sizeof(markerPoints[1]) << endl;
+    for (int i = 0; i < region; i++){   //最大数までループ
+        if (markerPoints[i].z < 10){
+            /* 上と整合性を取って10以下の大きさの領域は無視する */
+            continue;
+        }
         /* 領域内の点をpoint[3]に書き込む */
         if (markerPoints[i].x > init_region[0].x && markerPoints[i].x < init_region[1].x && markerPoints[i].y > init_region[0].y && markerPoints[i].y < init_region[1].y){
             point[counter] = markerPoints[i];
             counter ++;
+            cout << "markerPoints (x,y,z) : " << markerPoints[i].x << "," << markerPoints[i].y << "," << markerPoints[i].z << endl;
+            
+        }
+        if (counter > 2){
+            cout << "error : too many points" << endl;
+            break;
         }
     }
-    if (counter != 3){
-        cout << "error" << endl;    //(仮)coutでエラー表示しておく
-    }
+    cout << "init_region[0] (x,y) = (" << init_region[0].x << ", " << init_region[0].y <<")" << endl;
+    cout << "init_region[1] (x,y) = (" << init_region[1].x << ", " << init_region[1].y <<")" << endl;
+
     marker_initializing = false;
 }
 void markerInfo::drawRegion(){
     ofSetColor(30,30,150,70);
     ofFill();
-    ofDrawRectangle(init_region[0].x, init_region[0].y, mouse_position->x - init_region[0].x, mouse_position->y - init_region[0].y);
+    //cout << "x : " << init_region[0].x << endl;
+    //cout << " mouse pos : " << mouse_position.x << endl;
+    ofDrawRectangle(init_region[0].x + cam_margin, init_region[0].y + cam_margin + camheight, mouse_position.x - init_region[0].x - cam_margin, mouse_position.y - init_region[0].y - camheight - cam_margin);
     ofSetColor(255);
     ofNoFill();
 }

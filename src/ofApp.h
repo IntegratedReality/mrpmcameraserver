@@ -28,8 +28,9 @@ class markerInfo{  //マーカーの座標などを保管しておく
     /* 領域指定用 */
     bool marker_initializing;   //マーカーの初期化中かどうか(ドラッグで領域を選択するため、イベントを区別)
     static int pointSet;   //領域指定の時の一時的な変数
+    static bool drawing;    //描画中かどうかのフラグ
     ofVec2f init_region[2]; //指定する領域の左上、右下の座標を保管
-    ofVec2f *mouse_position;    //描画用に領域指定中のマウス位置を保管
+    static ofVec2f mouse_position;    //描画用に領域指定中のマウス位置を保管
     
     /* 関数 */
     inline void calcAngle(ofVec2f front,ofVec2f marker_center){   //角度算出
