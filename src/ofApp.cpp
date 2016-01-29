@@ -168,8 +168,9 @@ void ofApp::mouseDragged(int x, int y, int button){
     if(homography.movingPoint) {
         homography.curPoint->x = x - cam_margin;
         homography.curPoint->y = y - cam_margin;
+        cout << "x : " << x << endl;
         
-        homography.homographyMat = cv::findHomography(cv::Mat(homography.srcPoints), cv::Mat(homography.warpedPoints));
+        homography.homographyMat = cv::findHomography(homography.srcPoints, homography.warpedPoints);
     }
 }
 
@@ -180,8 +181,9 @@ void ofApp::mousePressed(int x, int y, int button){
         if (homography.srcPoints.size() < 4){   //4点未満の時しかpush_backはしない
             cv::Point2f cur(x - cam_margin, y - cam_margin);
             homography.srcPoints.push_back(cur);
+            cout << "debug1" << endl;
         }
-        else if (homography.first && homography.srcPoints.size() == 4){     //set destination points
+        if (homography.first && static_cast<int>(homography.srcPoints.size()) == 4){     //set destination points
             
             homography.warpedPoints.push_back(cv::Point2f(50,50));
             homography.warpedPoints.push_back(cv::Point2f(50,50) + cv::Point2f(0,250));
@@ -193,6 +195,7 @@ void ofApp::mousePressed(int x, int y, int button){
             
             homography.homographyReady = true;     //ホモグラフィ完了フラグ
             homography.first = false;      //skip after the first loop
+            cout << "debug2" <<  endl;
         }
     }
     /* マーカー認識領域の設定 */
