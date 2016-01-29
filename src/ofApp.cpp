@@ -169,7 +169,7 @@ void ofApp::mousePressed(int x, int y, int button){
             cv::Point2f cur(x - cam_margin, y - cam_margin);
             homography.srcPoints.push_back(cur);
         }
-        else if (homography.first && homography.srcPoints.size() == 4){     //set destination points
+        if (homography.first && homography.srcPoints.size() == 4){     //set destination points
             
             homography.warpedPoints.push_back(cv::Point2f(50,50));
             homography.warpedPoints.push_back(cv::Point2f(50,50) + cv::Point2f(0,250));
