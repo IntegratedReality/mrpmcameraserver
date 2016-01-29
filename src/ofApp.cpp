@@ -1,5 +1,8 @@
 #include "ofApp.h"
 
+/* スタティック変数の定義 */
+int markerInfo::pointSet;
+
 //--------------------------------------------------------------
 void ofApp::setup(){
     ofBackground(50, 50, 50);
@@ -13,6 +16,7 @@ void ofApp::setup(){
     improcess.pixels_origin = myCam.getPixels();
     improcess.pixels_gray = improcess.grayImage.getPixels();
     improcess.pixels_bin = improcess.bin.getPixels();
+    
 }
 
 //--------------------------------------------------------------
@@ -56,7 +60,7 @@ void ofApp::update(){
         
         /* 初期化(前回埋めたところだけ消去して節約) */
         if (improcess.previous_num >= region){  //下で初期化するときに変な領域に入らないように制限
-            improcess.previous_num = region-1;
+            improcess.previous_num = region - 1;    //最大値を超えた場合は最大値に設定
         }
         for (int i = 0; i <= improcess.previous_num; i++){
             improcess.center_point[i] = ofVec3f(0,0,0);     //重心を入れる配列をリセット
@@ -116,6 +120,14 @@ void ofApp::draw(){
     if (!homography.srcPoints.empty()){
         homography.drawPoints(homography.srcPoints);
     }
+    
+    /* マーカーの初期化領域を描画 */
+//    for (int i = 0; i < 8; i++){
+//        if (marker[i].marker_initializing == true){
+//            //marker[i].drawRegion();
+//        }
+//    }
+    
     /* fps書き出し */
     double fps = ofGetFrameRate();
     string fpsString = "fps : " + ofToString(fps);
@@ -125,9 +137,10 @@ void ofApp::draw(){
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
     if (key > 0 && key < 9){    //機体の数なので1~8
-        marker[key].marker_initializing = true;
+        marker[key].marker_initializing = !marker[key].marker_initializing; //bool反転
+        cout << "initializing marker[" << key << "]" << endl;
         for (int i = 0; i < 8; i ++){
-            if (marker[i].marker_initializing == true && i != key){     //連続で番号を押した時のための処理
+            if (marker[i].marker_initializing == true && i != key){     //連続で別の番号を押した時のための処理
                 marker[i].marker_initializing = false;
             }
         }
@@ -141,14 +154,13 @@ void ofApp::keyReleased(int key){
 
 //--------------------------------------------------------------
 void ofApp::mouseMoved(int x, int y ){
-    for (int i = 0; i < 8; i++){
-        if (marker[i].marker_initializing == true){
-            marker[i].mouse_position->x = x;
-            marker[i].mouse_position->y = y;
-            marker[i].drawRegion();
-            break;
-        }
-    }
+//    for (int i = 0; i < 8; i++){
+//        if (marker[i].marker_initializing == true){
+//            marker[i].mouse_position->x = x;
+//            marker[i].mouse_position->y = y;
+//            break;
+//        }
+//    }
 }
 
 //--------------------------------------------------------------
@@ -183,17 +195,22 @@ void ofApp::mousePressed(int x, int y, int button){
             homography.first = false;      //skip after the first loop
         }
     }
-    for (int i = 0; i < 8; i++){
-        if (marker[i].marker_initializing == true){
-            marker[i].init_region[marker[i].pointSet] = ofVec2f(x - cam_margin,y - cam_margin - camheight);
-            if (marker[i].pointSet == 1){
-                marker[i].init(improcess.center_point);
-                break;
-            }
-            marker[i].pointSet ++;
-            break;
-        }
-    }
+    /* マーカー認識領域の設定 */
+    /* 長方形領域の二点(init_region[])を指定する、pointSet(staticメンバ)が一時的なインデックスになる */
+//    for (int i = 0; i < 8; i++){
+//        if (marker[i].marker_initializing == true){
+//            /* 画像上の座標に変換(右辺) */
+//            marker[i].init_region[marker[0].pointSet] = ofVec2f(x - cam_margin,y - cam_margin - camheight);
+//            if (marker[0].pointSet == 1){
+//                marker[i].init(improcess.center_point);
+//                marker[0].pointSet = 0; //1の次は0に戻しておく(0 or 1 の２つ)
+//                marker[i].marker_initializing = false;  //設定終了
+//                break;
+//            }
+//            marker[i].pointSet ++;
+//            break;
+//        }
+//    }
 }
 
 //--------------------------------------------------------------
@@ -202,10 +219,10 @@ void ofApp::mouseReleased(int x, int y, int button){
 }
 //--------------------------------------------------------------
 
-void markerInfo::init( ofVec3f *markerPoints){    //個体を認識するため、3つの点が含まれる領域を設定
+void markerInfo::init(ofVec3f *markerPoints){    //個体を認識するため、3つの点が含まれる領域を設定
     /* 長方形の領域を設定する。引数は左上と右下の二点の座標 markerPointsは全てのledの座標(3×8個になるはず) */
     int counter = 0;    //検出された個数を保持
-    /* 画像上の座標に変換 */
+    
     for (int i = 0; i < sizeof(markerPoints) / sizeof(markerPoints[0]); i++){
         /* 領域内の点をpoint[3]に書き込む */
         if (markerPoints[i].x > init_region[0].x && markerPoints[i].x < init_region[1].x && markerPoints[i].y > init_region[0].y && markerPoints[i].y < init_region[1].y){
