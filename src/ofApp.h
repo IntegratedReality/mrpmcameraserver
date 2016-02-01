@@ -14,6 +14,7 @@ constexpr int cam_margin = 30;
 const int BUF_LABEL=1024;   //raspiでは領域の再確保が発生するとセグフォ起こしたので大きめに取っておく
 const int region = 512;     //ラベリングから受け取る点の最大値(実際の運用時は30とか？)
 const int min_region = 10;   //ラベリングの際にこの数値以下の小さい領域は無視する(ノイズ除去のため)
+const int max_velocity = 100;   //1フレームで進める最大距離(後で計算して決める)
 
 class markerInfo{  //マーカーの座標などを保管しておく
     public :
@@ -28,23 +29,34 @@ class markerInfo{  //マーカーの座標などを保管しておく
     
     /* 領域指定用 */
     bool marker_initializing;   //マーカーの初期化中かどうか(ドラッグで領域を選択するため、イベントを区別)
+    bool active;   //初期化完了フラグ兼、生きているかどうか
     static int pointSet;   //領域指定の時の一時的な変数
     static bool drawing;    //描画中かどうかのフラグ
     ofVec2f init_region[2]; //指定する領域の左上、右下の座標を保管
     static ofVec2f mouse_position;    //描画用に領域指定中のマウス位置を保管
     
     /* 関数 */
-    inline void calcAngle(ofVec2f front,ofVec2f marker_center){   //角度算出
+    inline void calcAngle(ofVec2f front){   //角度算出
         angle = (front.x - marker_center.x) / (front.y - marker_center.y);
     }
     inline void calcVelocity(){  //速度算出
         velocity.x = marker_center.x - prev_marker_center.x;
         velocity.y = marker_center.y - prev_marker_center.y;
     }
+    inline double distance(ofVec2f a,ofVec2f b){    //二点間の距離(の二乗)
+        return ((a.x - b.x)*(a.x - b.x) + (a.y - b.y)*(a.y - b.y));
+    }
+    inline void center(ofVec2f *point){
+        marker_center = ofVec2f((point[0].x + point[1].x + point[2].x) / 3, (point[0].y + point[1].y + point[2].y) / 3);
+    }
     void init(ofVec3f *markerPoints);   //個体を認識するため、3つの点が含まれる領域を設定
     void drawRegion();
+    void showMarker();
+    void update(ofVec3f *markerPoints, int array_length);
+    
     markerInfo(){
         marker_initializing = false;
+        active = false;
     }
 };
 
@@ -66,9 +78,10 @@ class imageProcess{
     
     int num = 0;
     int previous_num = region;  //一個前のラベル数を保存
+    int num_of_light = 0;   //min_region以上の領域の個数
     cv::Mat_<int> labels = cv::Mat_<int>::zeros(camheight,camwidth);
     cv::Mat bin_mat;    //ofとCVの変換(ラッパー)用
-    ofVec3f center_point[region];       //ラベリングされた領域の重心を保管する (x,y,アクティブor非アクティブ)
+    ofVec3f center_point[region];       //ラベリングされた領域の重心を保管する (x座標,y座標,領域の大きさ)
     void writePoints();
     
     /* flags */
@@ -238,6 +251,11 @@ class labelingClass{
 //        }
 //    }
 //};
+
+class simulator{
+    ofImage simulation;
+    unsigned char *pixels_simulation;
+};
 
 class ofApp : public ofBaseApp{
 
