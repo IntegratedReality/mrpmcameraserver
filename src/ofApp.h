@@ -263,8 +263,8 @@ class simulatorClass{
         bool turn = false;
     
         inline void drawCube(ofVec2f point1){
-            for (int i = point1.x; i <= point1.x + 4; i++){
-                for (int j = point1.y; j <= point1.y + 4; j++){
+            for (int i = point1.x; i <= point1.x + 3; i++){
+                for (int j = point1.y; j <= point1.y + 3; j++){
                     pixels_simulation[j * camwidth + i ] = 255;
                 }
             }

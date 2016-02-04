@@ -40,6 +40,14 @@ void ofApp::update(){
     }
     simulator.simulationImg.update();
     
+    for (int i = 0; i < 8; i++){
+        if (marker[i].active){
+            marker[i].update(improcess.center_point, improcess.num_of_light);
+        }
+    }
+    
+    /* ~simulation */
+    
     if (myCam.isFrameNew()){
         for (int i = 0 ; i < camwidth; i++){
             for (int j = 0; j < camheight; j++){
@@ -64,7 +72,7 @@ void ofApp::update(){
         }
         
         /***** labeling~ *****/
-        improcess.bin_mat = ofxCv::toCv(improcess.bin);
+        improcess.bin_mat = ofxCv::toCv(simulator.simulationImg);
         improcess.num = labeling.labeling(improcess.bin_mat, improcess.labels);       //ラベリング実行
         
         /* 各ラベルの重心を求める */
@@ -122,8 +130,8 @@ void ofApp::update(){
 void ofApp::draw(){
     /* 映像の描写 */
     myCam.draw(cam_margin,cam_margin);
-    improcess.grayImage.draw(cam_margin + camwidth, cam_margin);
-    improcess.bin.draw(cam_margin, cam_margin + camheight);
+    //improcess.grayImage.draw(cam_margin + camwidth, cam_margin);
+    //improcess.bin.draw(cam_margin, cam_margin + camheight);
     
     /* 重心座標を描写・書き出し */
     labeling.drawRegions(improcess.center_point,improcess.num);
@@ -151,7 +159,7 @@ void ofApp::draw(){
     }
     
     /* シミュレーション */
-    simulator.simulationImg.draw(cam_margin + camwidth, cam_margin + camheight);
+    //simulator.simulationImg.draw(cam_margin + camwidth, cam_margin + camheight);
     
     
     /* fps書き出し */
@@ -167,8 +175,8 @@ void ofApp::draw(){
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
-    int num = key - 48;     //keyは固有の番号なので、ずらしてやる
-    if (num > 0 && num < 9){    //機体の数なので1~8
+    int num = key - 49;     //keyは固有の番号なので、ずらしてやる
+    if (num >= 0 && num < 8){    //機体の数なので1~8
         marker[num].marker_initializing = !marker[num].marker_initializing; //bool反転
         cout << "\ninitializing marker[" << num << "]" << endl;
         for (int i = 0; i < 8; i ++){
@@ -187,10 +195,8 @@ void ofApp::keyReleased(int key){
 //--------------------------------------------------------------
 void ofApp::mouseMoved(int x, int y ){
     if (marker[0].drawing){
-        //cout << "debug3" << endl;
         marker[0].mouse_position.x = x;    //staticなのでindexは何でもOK
         marker[0].mouse_position.y = y;
-        //cout << "value : " << marker[0].mouse_position.x << endl;
     }
 }
 
@@ -244,7 +250,7 @@ void ofApp::mousePressed(int x, int y, int button){
                 marker[i].active = true;
                 break;
             }
-            marker[i].pointSet ++;
+            marker[i].pointSet++;
             break;
         }
     }
@@ -259,7 +265,7 @@ void ofApp::mouseReleased(int x, int y, int button){
 void markerInfo::init(ofVec3f *markerPoints){    //個体を認識するため、3つの点が含まれる領域を設定
     /* 長方形の領域を設定する。引数は左上と右下の二点の座標 markerPointsは全てのledの座標(3×8個になるはず) */
     int counter = 0;    //検出された個数を保持
-    for (int i = 0; i < region; i++){   //最大数までループ
+    for (int i = 1; i < region; i++){   //最大数までループ
         if (markerPoints[i].z < min_region){
             /* 上と同様min_region以下の大きさの領域は無視する */
             continue;
@@ -267,11 +273,12 @@ void markerInfo::init(ofVec3f *markerPoints){    //個体を認識するため�
         /* 領域内の点をpoint[3]に書き込む */
         if (markerPoints[i].x > init_region[0].x && markerPoints[i].x < init_region[1].x && markerPoints[i].y > init_region[0].y && markerPoints[i].y < init_region[1].y){
             point[counter] = markerPoints[i];
+            cout << "point[" << counter << "]" << endl;
             counter ++;
             cout << "markerPoints (x,y,z) : " << markerPoints[i].x << ", " << markerPoints[i].y << ", " << markerPoints[i].z << endl;
             
         }
-        if (counter > 2){
+        if (counter > 3){
             cout << "error : too many points" << endl;
             break;
         }
@@ -296,23 +303,24 @@ void markerInfo::drawRegion(){
 }
 
 void markerInfo::update(ofVec3f *markerPoints, int array_length){
-    int min_index = 0;
+    int min_index = 1;
     double min_dif,dist;    //両方一時変数
     for (int i = 0; i < 3; i++){
         prev_point[i] = point[i];
         
         /* 一番近い点を探す */
-        min_index = 0;
-        min_dif = distance(point[i], markerPoints[0]);
-        for (int j = 1; j < array_length; j++){
+        min_index = 1;
+        min_dif = distance(point[i], markerPoints[1]);  //markerPointsは1以降が有効な座標(ラベリングの仕様)
+        for (int j = 2; j < array_length; j++){
+            if (markerPoints[j].z < 10) continue;
             dist = distance(point[i], markerPoints[j]);
-            
+            //cout << "dif : " << dist <<endl;
             if (dist < min_dif && dist < max_velocity){ //max_velocityより進んでいる場合は間違いなので含めない
                 min_dif = dist;
                 min_index = j;
                 /*
-                //本来0を最小として初期化する必要はない
-                //一個もmax_velocity以内の点が見つからないならここでエラー処理して次のフレームに回すべき(後で実装)
+                //本来最初の値を最小として初期化する必要はない
+                //一個もmax_velocityの範囲内の点が見つからないならここでエラー処理して次のフレームに回すべき(後で実装)
                 */
             }
         }
@@ -323,10 +331,10 @@ void markerInfo::update(ofVec3f *markerPoints, int array_length){
 
 void markerInfo::showMarker(){
     ofFill();
-    ofSetColor(50, 130, 180, 90);
+    ofSetColor(50, 130, 250);
     /* 表示位置の関係で色々足している */
     ofDrawTriangle(point[0].x + cam_margin,point[0].y + cam_margin + camheight , point[1].x + cam_margin, point[1].y + cam_margin + camheight, point[2].x + cam_margin, point[2].y + cam_margin + camheight);
-    ofDrawCircle(marker_center, 4);
+    //ofDrawCircle(marker_center, 4);
     ofNoFill();
     ofSetColor(255);
 }
