@@ -152,12 +152,10 @@ void ofApp::draw(){
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
-    //cout << "key" << key << endl;
-    int num = key - 48;
+    int num = key - 48;     //keyは固有の番号なので、ずらしてやる
     if (num > 0 && num < 9){    //機体の数なので1~8
-        //cout << "debug2" <<endl;
         marker[num].marker_initializing = !marker[num].marker_initializing; //bool反転
-        cout << "initializing marker[" << num << "]" << endl;
+        cout << "\ninitializing marker[" << num << "]" << endl;
         for (int i = 0; i < 8; i ++){
             if (marker[i].marker_initializing == true && i != num){     //連続で別の番号を押した時のための処理
                 marker[i].marker_initializing = false;
@@ -220,7 +218,7 @@ void ofApp::mousePressed(int x, int y, int button){
         if (marker[i].marker_initializing == true && y > cam_margin + camheight - 10){
             marker[0].drawing = true;
             /* 画像上の座標に変換(右辺) */
-            cout << "marker[0].pointSet : " << marker[0].pointSet << endl;
+            //cout << "marker[0].pointSet : " << marker[0].pointSet << endl;
             marker[i].init_region[marker[0].pointSet] = ofVec2f(x - cam_margin,y - cam_margin - camheight);
             marker[0].mouse_position = ofVec2f(x - cam_margin + 1, y - cam_margin - camheight + 1); //領域選択の際に指定する二点目を仮に入れておく
             if (marker[0].pointSet == 1){
@@ -255,12 +253,18 @@ void markerInfo::init(ofVec3f *markerPoints){    //個体を認識するため�
         if (markerPoints[i].x > init_region[0].x && markerPoints[i].x < init_region[1].x && markerPoints[i].y > init_region[0].y && markerPoints[i].y < init_region[1].y){
             point[counter] = markerPoints[i];
             counter ++;
-            cout << "markerPoints (x,y,z) : " << markerPoints[i].x << "," << markerPoints[i].y << "," << markerPoints[i].z << endl;
+            cout << "markerPoints (x,y,z) : " << markerPoints[i].x << ", " << markerPoints[i].y << ", " << markerPoints[i].z << endl;
             
         }
         if (counter > 2){
             cout << "error : too many points" << endl;
             break;
+        }
+    }
+    if (counter < 3) {
+        cout << "error : too few points" << endl;
+        for (int i = counter - 1 ; i < counter; i++){
+            point[i] = ofVec2f(0,0);    //細かいエラー処理は後で追加
         }
     }
     cout << "init_region[0] (x,y) = (" << init_region[0].x << ", " << init_region[0].y <<")" << endl;
@@ -303,11 +307,11 @@ void markerInfo::update(ofVec3f *markerPoints, int array_length){
 }
 
 void markerInfo::showMarker(){
-    //ofDrawTriangle(point[0].x, point[0].y, point[1].x, point[1].y, point[2].x, point[2].y);
     ofFill();
-    ofSetColor(50, 130, 180, 50);
-    ofDrawTriangle(point[0], point[1], point[2]);
-    ofDrawCircle(marker_center, 2);
+    ofSetColor(50, 130, 180, 90);
+    /* 表示位置の関係で色々足している */
+    ofDrawTriangle(point[0].x + cam_margin,point[0].y + cam_margin + camheight , point[1].x + cam_margin, point[1].y + cam_margin + camheight, point[2].x + cam_margin, point[2].y + cam_margin + camheight);
+    ofDrawCircle(marker_center, 4);
     ofNoFill();
     ofSetColor(255);
 }
