@@ -1,1 +1,12 @@
 /bin/
+*.make
+*.plist
+*.xcodeproj
+*.xcconfig
+**/.gitkeep
+Makefile
+positionDetector3.xcodeproj
+Project.xcconfig
+config.make
+addons.make
+.DS_Store
