@@ -19,11 +19,26 @@ void ofApp::setup(){
     improcess.pixels_gray = improcess.grayImage.getPixels();
     improcess.pixels_bin = improcess.bin.getPixels();
     
+    
+    simulator.simulationImg.allocate(camwidth, camheight, OF_IMAGE_GRAYSCALE);
+    simulator.pixels_simulation = simulator.simulationImg.getPixels();
+    simulator.init();
+    simulator.markerPos[0] = ofVec2f(30,30);
+    simulator.markerPos[1] = ofVec2f(400,300);
+    simulator.markerPos[2] = ofVec2f(200,30);
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
     myCam.update();
+    
+    /* simulation */
+    simulator.init();
+    simulator.movementManager();
+    for (int i = 0; i < 3; i++){
+        simulator.markerGen(simulator.markerPos[i]);
+    }
+    simulator.simulationImg.update();
     
     if (myCam.isFrameNew()){
         for (int i = 0 ; i < camwidth; i++){
@@ -53,11 +68,6 @@ void ofApp::update(){
         improcess.num = labeling.labeling(improcess.bin_mat, improcess.labels);       //ラベリング実行
         
         /* 各ラベルの重心を求める */
-//        for (int i = 0; i < improcess.labels.rows; i++){
-//            for (int j = 0; j < improcess.labels.cols; j++){
-//                improcess.center_point[improcess.labels(i,j)] = ofVec3f(0,0,0);     //重心を入れる配列をリセット(改善の余地あり？)
-//            }
-//        } //間違ってたやつ(一応残してる)
         
         /* 初期化(前回埋めたところだけ消去して節約) */
         if (improcess.previous_num >= region){  //下で初期化するときに変な領域に入らないように制限
@@ -117,7 +127,7 @@ void ofApp::draw(){
     
     /* 重心座標を描写・書き出し */
     labeling.drawRegions(improcess.center_point,improcess.num);
-    improcess.writePoints();
+    //improcess.writePoints();
     
     /* ホモグラフィの基準点を描写 */
     if (!homography.srcPoints.empty()){
@@ -133,11 +143,16 @@ void ofApp::draw(){
         }
     }
     
+    /* 認識されているマーカーをオーバーレイ */
     for (int i = 0; i < 9; i++){
         if (marker[i].active){
             marker[i].showMarker();
         }
     }
+    
+    /* シミュレーション */
+    simulator.simulationImg.draw(cam_margin + camwidth, cam_margin + camheight);
+    
     
     /* fps書き出し */
     double fps = ofGetFrameRate();
@@ -412,4 +427,10 @@ void imageProcess::writePoints(){      //ラベリング後に重心を求め、
         }
     }
     ofSetColor(255);
+}
+
+void simulatorClass::markerGen(ofVec2f center){
+    drawCube(ofVec2f(center.x + 5, center.y));
+    drawCube(ofVec2f(center.x - 10, center.y + 5));
+    drawCube(ofVec2f(center.x - 10, center.y - 5));
 }
