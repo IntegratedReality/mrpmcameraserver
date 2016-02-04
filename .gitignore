@@ -10,4 +10,4 @@ Project.xcconfig
 config.make
 addons.make
 .DS_Store
-
+openFrameworks-Info.plist
