@@ -8,8 +8,8 @@
 #include <typeinfo>
 #include <string>
 
-constexpr int camwidth = 448;
-constexpr int camheight = 336;
+constexpr int camwidth = 480;
+constexpr int camheight = 360;
 constexpr int cam_margin = 30;
 const int BUF_LABEL=1024;   //raspiでは領域の再確保が発生するとセグフォ起こしたので大きめに取っておく
 const int region = 512;     //ラベリングから受け取る点の最大値(実際の運用時は30とか？)
@@ -34,7 +34,10 @@ class markerInfo{  //マーカーの座標などを保管しておく
         static bool drawing;    //描画中かどうかのフラグ
         ofVec2f init_region[2]; //指定する領域の左上、右下の座標を保管
         static ofVec2f mouse_position;    //描画用に領域指定中のマウス位置を保管
-        
+    
+        /* 表示用 */
+        string pointStr;
+    
         /* 関数 */
         inline void calcAngle(ofVec2f front){   //角度算出
             angle = (front.x - marker_center.x) / (front.y - marker_center.y);
@@ -46,7 +49,7 @@ class markerInfo{  //マーカーの座標などを保管しておく
         inline double distance(ofVec2f a,ofVec2f b){    //二点間の距離(の二乗)
             return ((a.x - b.x)*(a.x - b.x) + (a.y - b.y)*(a.y - b.y));
         }
-        inline void center(ofVec2f *point){
+        inline void calcCenter(){
             marker_center = ofVec2f((point[0].x + point[1].x + point[2].x) / 3, (point[0].y + point[1].y + point[2].y) / 3);
         }
         void init(ofVec3f *markerPoints);   //個体を認識するため、3つの点が含まれる領域を設定
@@ -86,6 +89,7 @@ class imageProcess{
         
         /* flags */
         bool isNewframe = false;
+        bool showImage = true;
 };
 
 class homographyClass{
