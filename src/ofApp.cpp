@@ -20,12 +20,12 @@ void ofApp::setup(){
     improcess.pixels_bin = improcess.bin.getPixels();
     
     
-    simulator.simulationImg.allocate(camwidth, camheight, OF_IMAGE_GRAYSCALE);
-    simulator.pixels_simulation = simulator.simulationImg.getPixels();
-    simulator.init();
-    simulator.markerPos[0] = ofVec2f(30,30);
-    simulator.markerPos[1] = ofVec2f(400,300);
-    simulator.markerPos[2] = ofVec2f(200,10);
+//    simulator.simulationImg.allocate(camwidth, camheight, OF_IMAGE_GRAYSCALE);
+//    simulator.pixels_simulation = simulator.simulationImg.getPixels();
+//    simulator.init();
+//    simulator.markerPos[0] = ofVec2f(30,30);
+//    simulator.markerPos[1] = ofVec2f(400,300);
+//    simulator.markerPos[2] = ofVec2f(200,10);
 }
 
 //--------------------------------------------------------------
@@ -33,21 +33,21 @@ void ofApp::update(){
     myCam.update();
     
     /* simulation */
-    simulator.init();
-    simulator.movementManager();
-    for (int i = 0; i < 3; i++){
-        simulator.markerGen(simulator.markerPos[i]);
-    }
-    simulator.simulationImg.update();
-    
-    for (int i = 0; i < 8; i++){
-        if (marker[i].active){
-            marker[i].update(improcess.center_point, improcess.num_of_light);
-            //cout << "marker[" << i << "] : (" << marker[i].marker_center.x << "," << marker[i].marker_center.y << ")" << endl;
-        }
-    }
-    
+//    simulator.init();
+//    simulator.movementManager();
+//    for (int i = 0; i < 3; i++){
+//        simulator.markerGen(simulator.markerPos[i]);
+//    }
+//    simulator.simulationImg.update();
+//    
     /* ~simulation */
+    
+//    for (int i = 0; i < 8; i++){
+//        if (marker[i].active){
+//            marker[i].update(improcess.center_point, improcess.num);
+//            //cout << "marker[" << i << "] : (" << marker[i].marker_center.x << "," << marker[i].marker_center.y << ")" << endl;
+//        }
+//    }
     
     if (myCam.isFrameNew()){
         for (int i = 0 ; i < camwidth; i++){
@@ -75,7 +75,8 @@ void ofApp::update(){
         }
         
         /***** labeling~ *****/
-        improcess.bin_mat = ofxCv::toCv(simulator.simulationImg);
+        //improcess.bin_mat = ofxCv::toCv(simulator.simulationImg); //シミュレーションの時
+        improcess.bin_mat = ofxCv::toCv(improcess.bin);
         improcess.num = labeling.labeling(improcess.bin_mat, improcess.labels);       //ラベリング実行
         
         /* 各ラベルの重心を求める */
@@ -101,12 +102,12 @@ void ofApp::update(){
                 }
             }
         }
-        improcess.num_of_light = 0;
+        //improcess.num_of_light = 0;
         for (int i = 1; i < improcess.num; i++){
             if (improcess.center_point[i].z > min_region){    //簡易的なローパスフィルタ(小さい画素は無視)
                 improcess.center_point[i].x /= (improcess.center_point[i].z + 1);     // 重心を求めるために割り算  +1は0から足した分を補正している
                 improcess.center_point[i].y /= (improcess.center_point[i].z + 1);
-                improcess.num_of_light++;
+                //improcess.num_of_light++;
             }
             else {
                 improcess.center_point[i].z = 0;    //アクティブでないものを見分ける(z = 0 : 非アクティブ)
@@ -123,6 +124,13 @@ void ofApp::update(){
                 }
             }
         }
+        for (int i = 0; i < 8; i++){
+            if (marker[i].active){
+                marker[i].update(improcess.center_point, improcess.num);
+                //cout << "marker[" << i << "] : (" << marker[i].marker_center.x << "," << marker[i].marker_center.y << ")" << endl;
+            }
+        }
+        
         improcess.grayImage.update();
         improcess.bin.update();
     }
@@ -136,11 +144,11 @@ void ofApp::draw(){
         myCam.draw(cam_margin,cam_margin);
     }
     //improcess.grayImage.draw(cam_margin + camwidth, cam_margin);
-    //improcess.bin.draw(cam_margin, cam_margin + camheight);
+    improcess.bin.draw(cam_margin, cam_margin + camheight);
     
     /* 重心座標を描写・書き出し */
     labeling.drawRegions(improcess.center_point,improcess.num);
-    //improcess.writePoints();
+    improcess.writePoints();
     
     /* ホモグラフィの基準点を描写 */
     if (!homography.srcPoints.empty()){
@@ -265,7 +273,7 @@ void ofApp::mousePressed(int x, int y, int button){
             /* 画像上の座標に変換(右辺) */
             //cout << "marker[0].pointSet : " << marker[0].pointSet << endl;
             marker[i].init_region[marker[0].pointSet] = ofVec2f(x - cam_margin,y - cam_margin - camheight);
-            marker[0].mouse_position = ofVec2f(x - cam_margin + 1, y - cam_margin - camheight + 1); //領域選択の際に指定する二点目を仮に入れておく
+            marker[0].mouse_position = ofVec2f(x + 1, y + 1); //領域選択の際に指定する二点目を仮に入れておく
             if (marker[0].pointSet == 1){
                 marker[i].active = true;
                 marker[i].init(improcess.center_point);
@@ -298,7 +306,7 @@ void markerInfo::init(ofVec3f *markerPoints){    //個体を認識するため�
         if (markerPoints[i].x > init_region[0].x && markerPoints[i].x < init_region[1].x && markerPoints[i].y > init_region[0].y && markerPoints[i].y < init_region[1].y){
             point[counter] = markerPoints[i];
             cout << "point[" << counter << "]" << endl;
-            counter ++;
+            counter++;
             cout << "markerPoints (x,y,z) : " << markerPoints[i].x << ", " << markerPoints[i].y << ", " << markerPoints[i].z << endl;
             
         }
@@ -336,7 +344,7 @@ void markerInfo::update(ofVec3f *markerPoints, int array_length){
         min_index = 1;
         min_dif = distance(point[i], markerPoints[1]);  //markerPointsは1以降が有効な座標(ラベリングの仕様)
         for (int j = 2; j < array_length; j++){
-            if (markerPoints[j].z < 10) continue;
+            if (markerPoints[j].z == 0) continue;
             dist = distance(point[i], markerPoints[j]);
             //cout << "dif : " << dist <<endl;
             if (dist < min_dif && dist < max_velocity){ //max_velocityより進んでいる場合は間違いなので含めない
@@ -428,8 +436,8 @@ int labelingClass::labeling(const cv::Mat& image,cv::Mat_<int>& label){
 }
 
 void labelingClass::drawRegions(ofVec3f* center_points, int num){
-    ofSetColor(230, 230, 230);
     ofFill();
+    ofSetColor(100, 100, 230);
     for (int i = 0; i < num; i++){
         if (center_points[i].z > min_region){    //簡易的なローパスフィルタ(小さい画素は無視)
             ofDrawCircle(cam_margin + center_points[i].x, cam_margin + camheight + center_points[i].y, 5);
