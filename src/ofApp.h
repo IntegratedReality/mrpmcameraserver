@@ -8,8 +8,8 @@
 #include <typeinfo>
 #include <string>
 
-constexpr int camwidth = 1280;   //macデフォのカメラだと解像度上げた時落ちた(WEBカムだとOK)
-constexpr int camheight = 720;
+constexpr int camwidth = 480;   //macデフォのカメラだと解像度上げた時落ちた(WEBカムだとOK)
+constexpr int camheight = 360;
 constexpr int cam_margin = 30;
 const int BUF_LABEL=1024;   //raspiでは領域の再確保が発生するとセグフォ起こしたので大きめに取っておく
 const int region = 512;     //ラベリングから受け取る点の最大値(実際の運用時は30とか？)
@@ -67,7 +67,7 @@ class imageProcess{
     public :
     
         /* for camera input */
-        ofImage grayImage,bin;
+        ofImage bin;
         
         /* pixel datas */
         
@@ -89,6 +89,7 @@ class imageProcess{
     
         ofFbo camFbo;
         ofFbo binFbo;
+        ofFbo stringFbo;
     
         /* flags */
         bool isNewframe = false;
