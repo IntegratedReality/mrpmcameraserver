@@ -8,8 +8,8 @@
 #include <typeinfo>
 #include <string>
 
-constexpr int camwidth = 480;
-constexpr int camheight = 360;
+constexpr int camwidth = 1280;   //macデフォのカメラだと解像度上げた時落ちた(WEBカムだとOK)
+constexpr int camheight = 720;
 constexpr int cam_margin = 30;
 const int BUF_LABEL=1024;   //raspiでは領域の再確保が発生するとセグフォ起こしたので大きめに取っておく
 const int region = 512;     //ラベリングから受け取る点の最大値(実際の運用時は30とか？)
@@ -86,7 +86,10 @@ class imageProcess{
         cv::Mat bin_mat;    //ofとCVの変換(ラッパー)用
         ofVec3f center_point[region];       //ラベリングされた領域の重心を保管する (x座標,y座標,領域の大きさ)
         void writePoints();
-        
+    
+        ofFbo camFbo;
+        ofFbo binFbo;
+    
         /* flags */
         bool isNewframe = false;
         bool showImage = true;

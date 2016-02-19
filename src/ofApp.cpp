@@ -9,16 +9,31 @@ ofVec2f markerInfo::mouse_position;
 void ofApp::setup(){
     ofBackground(50, 50, 50);
     
+    myCam.setDeviceID(1);
     myCam.initGrabber(camwidth, camheight);
+    ofSetFrameRate(40);
+    ofSetVerticalSync(true);
     
     /* ofImageのallocate */
-    improcess.grayImage.allocate(camwidth, camheight, OF_IMAGE_GRAYSCALE);
+    //improcess.grayImage.allocate(camwidth, camheight, OF_IMAGE_GRAYSCALE);
     improcess.bin.allocate(camwidth, camheight, OF_IMAGE_GRAYSCALE);
     
     improcess.pixels_origin = myCam.getPixels();
-    improcess.pixels_gray = improcess.grayImage.getPixels();
+    //improcess.pixels_gray = improcess.grayImage.getPixels();
     improcess.pixels_bin = improcess.bin.getPixels();
     
+    improcess.camFbo.allocate(camwidth,camheight,GL_RGB);
+    improcess.camFbo.begin();
+    {
+        ofClear(255, 255, 255);
+    }
+    improcess.camFbo.end();
+    improcess.binFbo.allocate(camwidth, camheight,GL_RGBA);
+    improcess.binFbo.begin();
+    {
+        ofClear(255,255,255,0);
+    }
+    improcess.camFbo.end();
     
 //    simulator.simulationImg.allocate(camwidth, camheight, OF_IMAGE_GRAYSCALE);
 //    simulator.pixels_simulation = simulator.simulationImg.getPixels();
@@ -50,6 +65,28 @@ void ofApp::update(){
 //    }
     
     if (myCam.isFrameNew()){
+//        for (int i = 0 ; i < camwidth; i++){
+//            for (int j = 0; j < camheight; j++){
+//                
+//                /* グレースケール化 */
+//                improcess.red = improcess.pixels_origin[j*3 * camwidth + i * 3];
+//                improcess.green = improcess.pixels_origin[j*3 * camwidth + i * 3 + 1];
+//                improcess.blue = improcess.pixels_origin[j*3 * camwidth + i * 3 + 2];
+//                improcess.gray = (improcess.red + improcess.green + improcess.blue) / 3;
+//                
+//                improcess.pixels_gray[j* camwidth + i] = improcess.gray;
+//                
+//                /* 二値化 */
+//            
+//                if (improcess.pixels_gray[j* camwidth + i] > 235){
+//                    improcess.pixels_bin[j* camwidth + i] = 255;
+//                }
+//                else{
+//                    improcess.pixels_bin[j* camwidth + i] = 0;
+//                }
+//            }
+//        }
+        
         for (int i = 0 ; i < camwidth; i++){
             for (int j = 0; j < camheight; j++){
                 
@@ -57,22 +94,17 @@ void ofApp::update(){
                 improcess.red = improcess.pixels_origin[j*3 * camwidth + i * 3];
                 improcess.green = improcess.pixels_origin[j*3 * camwidth + i * 3 + 1];
                 improcess.blue = improcess.pixels_origin[j*3 * camwidth + i * 3 + 2];
-                improcess.gray = (improcess.red + improcess.green + improcess.blue) / 3;
-                
-                improcess.pixels_gray[j* camwidth + i] = improcess.gray;
                 
                 /* 二値化 */
-            
-                if (improcess.pixels_gray[j* camwidth + i] > 250){
+                if ((improcess.red + improcess.green + improcess.blue) / 3 > 245){
                     improcess.pixels_bin[j* camwidth + i] = 255;
                 }
                 else{
                     improcess.pixels_bin[j* camwidth + i] = 0;
                 }
             }
-            
-            
         }
+
         
         /***** labeling~ *****/
         //improcess.bin_mat = ofxCv::toCv(simulator.simulationImg); //シミュレーションの時
@@ -135,34 +167,65 @@ void ofApp::update(){
         improcess.bin.update();
     }
     
+    /* fbo(GPU)による描画処理 */
+    
+    if (improcess.showImage){
+        improcess.camFbo.begin();
+        {
+            myCam.draw(0, 0);
+            if (!homography.srcPoints.empty()){
+                homography.drawPoints(homography.srcPoints);
+            }
+        }
+        improcess.camFbo.end();
+    }
+    
+    improcess.binFbo.begin();
+    {
+        improcess.bin.draw(0,0);
+        labeling.drawRegions(improcess.center_point,improcess.num);
+        
+        /* マーカーの初期化領域を描画 */
+        if (marker[0].drawing){
+            for (int i = 0; i < 8; i++){
+                if (marker[i].marker_initializing == true){
+                    marker[i].drawRegion();
+                }
+            }
+        }
+    }
+    improcess.binFbo.end();
+    
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
     /* 映像の描写 */
     if (improcess.showImage){
-        myCam.draw(cam_margin,cam_margin);
+        //myCam.draw(cam_margin,cam_margin);
+        improcess.camFbo.draw(cam_margin,cam_margin);
     }
+    improcess.binFbo.draw(cam_margin,cam_margin + camheight);
     //improcess.grayImage.draw(cam_margin + camwidth, cam_margin);
-    improcess.bin.draw(cam_margin, cam_margin + camheight);
+    //improcess.bin.draw(cam_margin, cam_margin + camheight);
     
     /* 重心座標を描写・書き出し */
-    labeling.drawRegions(improcess.center_point,improcess.num);
+    //labeling.drawRegions(improcess.center_point,improcess.num);
     improcess.writePoints();
     
     /* ホモグラフィの基準点を描写 */
-    if (!homography.srcPoints.empty()){
-        homography.drawPoints(homography.srcPoints);
-    }
+//    if (!homography.srcPoints.empty()){
+//        homography.drawPoints(homography.srcPoints);
+//    }
     
-    /* マーカーの初期化領域を描画 */
-    if (marker[0].drawing){
-        for (int i = 0; i < 8; i++){
-            if (marker[i].marker_initializing == true){
-                marker[i].drawRegion();
-            }
-        }
-    }
+//    /* マーカーの初期化領域を描画 */
+//    if (marker[0].drawing){
+//        for (int i = 0; i < 8; i++){
+//            if (marker[i].marker_initializing == true){
+//                marker[i].drawRegion();
+//            }
+//        }
+//    }
     
     /* 認識されているマーカーをオーバーレイ */
     for (int i = 0; i < 9; i++){
@@ -326,10 +389,18 @@ void markerInfo::init(ofVec3f *markerPoints){    //個体を認識するため�
 
     marker_initializing = false;
 }
+//void markerInfo::drawRegion(){
+//    ofSetColor(30,30,150,70);
+//    ofFill();
+//    ofDrawRectangle(init_region[0].x + cam_margin, init_region[0].y + cam_margin + camheight, mouse_position.x - init_region[0].x - cam_margin, mouse_position.y - init_region[0].y - camheight - cam_margin);
+//    ofSetColor(255);
+//    ofNoFill();
+//}
+
 void markerInfo::drawRegion(){
     ofSetColor(30,30,150,70);
     ofFill();
-    ofDrawRectangle(init_region[0].x + cam_margin, init_region[0].y + cam_margin + camheight, mouse_position.x - init_region[0].x - cam_margin, mouse_position.y - init_region[0].y - camheight - cam_margin);
+    ofDrawRectangle(init_region[0].x, init_region[0].y + cam_margin, mouse_position.x - init_region[0].x - cam_margin, mouse_position.y - init_region[0].y - camheight - cam_margin);
     ofSetColor(255);
     ofNoFill();
 }
@@ -435,12 +506,24 @@ int labelingClass::labeling(const cv::Mat& image,cv::Mat_<int>& label){
     return regions;
 }
 
+//void labelingClass::drawRegions(ofVec3f* center_points, int num){
+//    ofFill();
+//    ofSetColor(100, 100, 230);
+//    for (int i = 0; i < num; i++){
+//        if (center_points[i].z > min_region){    //簡易的なローパスフィルタ(小さい画素は無視)
+//            ofDrawCircle(cam_margin + center_points[i].x, cam_margin + camheight + center_points[i].y, 5);
+//        }
+//    }
+//    ofSetColor(255, 255, 255);      //色をリセット(これをしないと画像に色が上書きされてしまう)
+//    ofNoFill();
+//}
+
 void labelingClass::drawRegions(ofVec3f* center_points, int num){
     ofFill();
     ofSetColor(100, 100, 230);
     for (int i = 0; i < num; i++){
         if (center_points[i].z > min_region){    //簡易的なローパスフィルタ(小さい画素は無視)
-            ofDrawCircle(cam_margin + center_points[i].x, cam_margin + camheight + center_points[i].y, 5);
+            ofDrawCircle(center_points[i].x, center_points[i].y, 5);
         }
     }
     ofSetColor(255, 255, 255);      //色をリセット(これをしないと画像に色が上書きされてしまう)
