@@ -357,6 +357,7 @@ void markerInfo::init(ofVec3f *markerPoints){    //個体を認識するため�
         cout << "error : too few points" << endl;
         for (int i = counter ; i < 3; i++){
             point[i] = ofVec2f(0,0);    //細かいエラー処理は後で追加
+            active = false;
         }
     }
     cout << "init_region[0] (x,y) = (" << init_region[0].x << ", " << init_region[0].y <<")" << endl;
@@ -376,27 +377,61 @@ void markerInfo::drawRegion(){
 void markerInfo::update(ofVec3f *markerPoints, int array_length){
     int min_index = 1;
     double min_dif,dist;    //両方一時変数
+//    for (int i = 0; i < 3; i++){
+//        prev_point[i] = point[i];
+//        
+//        /* 一番近い点を探す */
+//        min_index = 1;
+//        min_dif = distance(point[i], markerPoints[1]);  //markerPointsは1以降が有効な座標(ラベリングの仕様)
+//        for (int j = 2; j < array_length; j++){
+//            if (markerPoints[j].z == 0) continue;
+//            dist = distance(point[i], markerPoints[j]);
+//            //cout << "dif : " << dist <<endl;
+//            if (dist < min_dif && dist < max_velocity){ //max_velocityより進んでいる場合は間違いなので含めない
+//                min_dif = dist;
+//                min_index = j;
+//                /*
+//                //本来最初の値を最小として初期化する必要はない
+//                //一個もmax_velocityの範囲内の点が見つからないならここでエラー処理して次のフレームに回すべき(後で実装)
+//                */
+//            }
+//        }
+//        point[i] = markerPoints[min_index];
+//    }
+    
+    /* 新バージョン */
     for (int i = 0; i < 3; i++){
-        prev_point[i] = point[i];
-        
-        /* 一番近い点を探す */
-        min_index = 1;
-        min_dif = distance(point[i], markerPoints[1]);  //markerPointsは1以降が有効な座標(ラベリングの仕様)
-        for (int j = 2; j < array_length; j++){
-            if (markerPoints[j].z == 0) continue;
-            dist = distance(point[i], markerPoints[j]);
-            //cout << "dif : " << dist <<endl;
-            if (dist < min_dif && dist < max_velocity){ //max_velocityより進んでいる場合は間違いなので含めない
-                min_dif = dist;
-                min_index = j;
-                /*
-                //本来最初の値を最小として初期化する必要はない
-                //一個もmax_velocityの範囲内の点が見つからないならここでエラー処理して次のフレームに回すべき(後で実装)
-                */
+        bool exist = false;
+        for (int j = 1; j < array_length; j++){
+            if (markerPoints[j].z == 0){
+                /* アクティブでない領域は無視 */
+                continue;
             }
+            dist = distance(point[i], markerPoints[j]);
+            if (dist < max_velocity){
+                if (!exist){
+                    /* 条件に合うものが初めて見つかった時 */     //条件に合うものが見つかった時点で、それだと確定するマーカーのサイズ設計が理想？？
+                    exist = true;
+                    min_dif = dist;
+                    min_index = j;
+                }
+                else if(exist && dist < min_dif) {
+                    /* より近い物が見つかった時 */
+                    min_dif = dist;
+                    min_index = j;
+                }
+            }
+            
+            if (exist){
+                point[i] = markerPoints[min_index];
+            }
+            else {
+                point[i] = prev_point[i];  //見つからなかった場合(前と同じ位置とする　本当は他のマーカーの進んだベクトル分足したい)
+            }
+            prev_point[i] = point[i];
         }
-        point[i] = markerPoints[min_index];
     }
+    
     calcCenter();  //重心も更新
 }
 

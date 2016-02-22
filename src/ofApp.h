@@ -21,6 +21,7 @@ class markerInfo{  //マーカーの座標などを保管しておく
         /* 座標関連 */
         ofVec2f point[3];   //マーカーの頂点座標(先端を0番とし、時計回りにする)
         ofVec2f prev_point[3];  //前のフレームでのマーカー位置
+        ofVec2f front;          //先頭の座標(角度算出用)
         ofVec2f marker_center;  //3点の重心位置
         ofVec2f prev_marker_center; //前のフレームでの重心位置
         ofVec2f velocity;   //(1フレーム辺りの)機体の速度(移動距離)
@@ -39,7 +40,7 @@ class markerInfo{  //マーカーの座標などを保管しておく
         string pointStr;
     
         /* 関数 */
-        inline void calcAngle(ofVec2f front){   //角度算出
+        inline void calcAngle(){   //角度算出
             angle = (front.x - marker_center.x) / (front.y - marker_center.y);
         }
         inline void calcVelocity(){  //速度算出
