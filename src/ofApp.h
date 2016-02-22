@@ -87,13 +87,23 @@ class imageProcess{
         ofVec3f center_point[region];       //ラベリングされた領域の重心を保管する (x座標,y座標,領域の大きさ)
         void writePoints();
     
+        ofTexture camTexture;
         ofFbo camFbo;
         ofFbo binFbo;
         ofFbo stringFbo;
     
+        ofVec3f homographyCorner[4];
+    
         /* flags */
         bool isNewframe = false;
         bool showImage = true;
+    
+        imageProcess(){
+            homographyCorner[0] = ofVec3f(0,0,0);
+            homographyCorner[1] = ofVec3f(camwidth,0,0);
+            homographyCorner[2] = ofVec3f(camwidth,camheight,0);
+            homographyCorner[3] = ofVec3f(0,camheight,0);
+        }
 };
 
 class homographyClass{

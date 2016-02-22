@@ -11,13 +11,14 @@ void ofApp::setup(){
     
     myCam.setDeviceID(0);
     myCam.initGrabber(camwidth, camheight);
-    ofSetFrameRate(40);
-    ofSetVerticalSync(true);
+//    ofSetFrameRate(40);
+//    ofSetVerticalSync(true);
     
     /* ofImageのallocate */
     improcess.bin.allocate(camwidth, camheight, OF_IMAGE_GRAYSCALE);
     
     improcess.pixels_origin = myCam.getPixels();
+    improcess.camTexture = myCam.getTexture();
     improcess.pixels_bin = improcess.bin.getPixels();
     
     /* initialize FBOs */
@@ -126,7 +127,7 @@ void ofApp::update(){
     if (improcess.showImage){
         improcess.camFbo.begin();
         {
-            myCam.draw(0, 0);
+            improcess.camTexture.draw(improcess.homographyCorner[0], improcess.homographyCorner[1], improcess.homographyCorner[2], improcess.homographyCorner[3]);
             /* ホモグラフィの基準点を描写 */
             if (!homography.srcPoints.empty()){
                 homography.drawPoints(homography.srcPoints);
@@ -162,6 +163,7 @@ void ofApp::update(){
     improcess.stringFbo.begin();
     {
         /* 座標を出力 */
+        ofClear(0,0,0,0);
         ofSetColor(255, 255, 255);
         for (int i = 0; i < 8; i++){
             if (marker[i].active){
@@ -266,13 +268,22 @@ void ofApp::mousePressed(int x, int y, int button){
 
         if (homography.first && static_cast<int>(homography.srcPoints.size()) == 4){     //set destination points
             
-            homography.warpedPoints.push_back(cv::Point2f(50,50));
-            homography.warpedPoints.push_back(cv::Point2f(50,50) + cv::Point2f(0,250));
-            homography.warpedPoints.push_back(cv::Point2f(50,50) + cv::Point2f(250,250));
-            homography.warpedPoints.push_back(cv::Point2f(50,50) + cv::Point2f(250,0));
+            homography.warpedPoints.push_back(cv::Point2f(30,30));
+            homography.warpedPoints.push_back(cv::Point2f(30,30) + cv::Point2f(0,camheight - 60));
+            homography.warpedPoints.push_back(cv::Point2f(30,30) + cv::Point2f(camwidth - 60,camheight - 60));
+            homography.warpedPoints.push_back(cv::Point2f(30,30) + cv::Point2f(camwidth - 60,0));
             
             homography.homographyMat = cv::findHomography(homography.srcPoints, homography.warpedPoints);
             //変換行列の計算はループから外し、変更するときのみ更新する
+            
+            //入力映像の変換用
+            improcess.camFbo.begin();
+                ofClear(0, 0, 0);
+            improcess.camFbo.end();
+            for (int i = 0; i < 4; i++){
+                homography.executeTransform(improcess.homographyCorner[i]);
+                improcess.homographyCorner[i].z = 0;
+            }
             
             homography.homographyReady = true;     //ホモグラフィ完了フラグ
             homography.first = false;      //skip after the first loop
@@ -303,7 +314,21 @@ void ofApp::mousePressed(int x, int y, int button){
 
 //--------------------------------------------------------------
 void ofApp::mouseReleased(int x, int y, int button){
-    homography.movingPoint = false;
+    if (homography.movingPoint){
+        homography.movingPoint = false;
+        
+        improcess.homographyCorner[0] = ofVec3f(0,0,0);
+        improcess.homographyCorner[1] = ofVec3f(camwidth,0,0);
+        improcess.homographyCorner[2] = ofVec3f(camwidth,camheight,0);
+        improcess.homographyCorner[3] = ofVec3f(0,camheight,0);
+        improcess.camFbo.begin();
+            ofClear(0, 0, 0);
+        improcess.camFbo.end();
+        for (int i = 0; i < 4; i++){
+            homography.executeTransform(improcess.homographyCorner[i]);
+            improcess.homographyCorner[i].z = 0;
+        }
+    }
 }
 //--------------------------------------------------------------
 
@@ -389,8 +414,8 @@ void homographyClass::drawPoints(vector<cv::Point2f>& points) {
     ofNoFill();
     ofSetColor(200, 10, 10);
     for(int i = 0; i < points.size(); i++) {
-        ofDrawCircle(points[i].x+cam_margin,points[i].y+cam_margin, 10);
-        ofDrawCircle(points[i].x+cam_margin,points[i].y+cam_margin, 1);
+        ofDrawCircle(points[i].x,points[i].y, 10);
+        ofDrawCircle(points[i].x,points[i].y, 1);
     }
     ofSetColor(255);
 }
@@ -453,7 +478,7 @@ void labelingClass::drawRegions(ofVec3f* center_points, int num){
     ofFill();
     ofSetColor(100, 100, 230);
     for (int i = 0; i < num; i++){
-        if (center_points[i].z > min_region){    //簡易的なローパスフィルタ(小さい画素は無視)
+        if (center_points[i].z != 0){    //簡易的なローパスフィルタ(小さい画素は無視)
             ofDrawCircle(center_points[i].x, center_points[i].y, 5);
         }
     }
@@ -477,7 +502,11 @@ void imageProcess::writePoints(){      //ラベリング後に重心を求め、
         if (center_point[i].z != 0){
             position = ofToString(i) + " : ";
             position += ofToString(center_point[i]);
-            ofDrawBitmapString(position,camwidth + 30 , 15 * i );
+            ofDrawBitmapString(position,30 , 15 * i );
+        }
+        else {
+            position = ofToString(i) + " : none";
+            ofDrawBitmapString(position,30 , 15 * i );
         }
     }
     ofSetColor(255);
