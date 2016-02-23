@@ -21,11 +21,11 @@ class markerInfo{  //マーカーの座標などを保管しておく
         /* 座標関連 */
         ofVec2f point[3];   //マーカーの頂点座標(先端を0番とし、時計回りにする)
         ofVec2f prev_point[3];  //前のフレームでのマーカー位置
-        ofVec2f front;          //先頭の座標(角度算出用)
         ofVec2f marker_center;  //3点の重心位置
         ofVec2f prev_marker_center; //前のフレームでの重心位置
         ofVec2f velocity;   //(1フレーム辺りの)機体の速度(移動距離)
-        double angle;   //マーカーの方向(値は tan x とする)
+        double angle;   //マーカーの方向(rad単位)
+        int front;          //先頭の座標がpoint[3]の何番目か(角度算出用)
         //char IP;  //各機のIPアドレス
         
         /* 領域指定用 */
@@ -33,6 +33,7 @@ class markerInfo{  //マーカーの座標などを保管しておく
         bool active;   //初期化完了フラグ兼、生きているかどうか
         static int pointSet;   //領域指定の時の一時的な変数
         static bool drawing;    //描画中かどうかのフラグ
+        static int selected;
         ofVec2f init_region[2]; //指定する領域の左上、右下の座標を保管
         static ofVec2f mouse_position;    //描画用に領域指定中のマウス位置を保管
     
@@ -41,7 +42,7 @@ class markerInfo{  //マーカーの座標などを保管しておく
     
         /* 関数 */
         inline void calcAngle(){   //角度算出
-            angle = (front.x - marker_center.x) / (front.y - marker_center.y);
+            angle = atan((point[front].y - marker_center.y) / (point[front].x - marker_center.x));
         }
         inline void calcVelocity(){  //速度算出
             velocity.x = marker_center.x - prev_marker_center.x;
@@ -57,6 +58,7 @@ class markerInfo{  //マーカーの座標などを保管しておく
         void drawRegion();
         void showMarker();
         void update(ofVec3f *markerPoints, int array_length);
+        void highlightFront();
         
         markerInfo(){
             marker_initializing = false;
@@ -345,6 +347,6 @@ class ofApp : public ofBaseApp{
         imageProcess improcess;
         labelingClass labeling;
         homographyClass homography;
-        simulatorClass simulator;
+        //simulatorClass simulator;
 };
 

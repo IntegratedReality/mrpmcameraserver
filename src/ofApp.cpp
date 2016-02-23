@@ -2,6 +2,7 @@
 
 /* スタティック変数の定義 */
 int markerInfo::pointSet = 0;
+int markerInfo::selected = 0;
 bool markerInfo::drawing = false;
 ofVec2f markerInfo::mouse_position;
 
@@ -13,6 +14,7 @@ void ofApp::setup(){
     myCam.initGrabber(camwidth, camheight);
 //    ofSetFrameRate(40);
 //    ofSetVerticalSync(true);
+    ofSetCircleResolution(12);
     
     /* ofImageのallocate */
     improcess.bin.allocate(camwidth, camheight, OF_IMAGE_GRAYSCALE);
@@ -169,7 +171,7 @@ void ofApp::update(){
             if (marker[i].active){
                 //cout << "marker[" << i << "] : (" << marker[i].marker_center.x << "," << marker[i].marker_center.y << ")" << endl;
                 marker[i].pointStr = "marker[" + ofToString(i) + "] : (" + ofToString(marker[i].marker_center.x) + ", " + ofToString(marker[i].marker_center.y) + ")";
-                ofDrawBitmapString(marker[i].pointStr, 0, 10 * i);
+                ofDrawBitmapString(marker[i].pointStr, 0, camheight + 10 * i);
             }
         }
         
@@ -188,23 +190,14 @@ void ofApp::draw(){
     }
     improcess.stringFbo.draw(cam_margin + camwidth,cam_margin);
     
-    /* 座標を出力 */
-    for (int i = 0; i < 8; i++){
-        if (marker[i].active){
-            //cout << "marker[" << i << "] : (" << marker[i].marker_center.x << "," << marker[i].marker_center.y << ")" << endl;
-            marker[i].pointStr = "marker[" + ofToString(i) + "] : (" + ofToString(marker[i].marker_center.x) + ", " + ofToString(marker[i].marker_center.y) + ")";
-            ofDrawBitmapString(marker[i].pointStr, cam_margin + camwidth, cam_margin + camheight + 10 * i);
-        }
-    }
-    
-    /* 重心座標を描写・書き出し */
-    //improcess.writePoints();
-    
-    
     /* fps書き出し */
     double fps = ofGetFrameRate();
     string fpsString = "fps : " + ofToString(fps);
     ofDrawBitmapString(fpsString, 10, 10);
+    
+    /* 選択中のマーカー */
+    string selectedMarker = "selected marker : " + ofToString(marker[0].selected);
+    ofDrawBitmapString(selectedMarker, 50, 10);
     
 //    cout << "length : " << sizeof(improcess.center_point) / sizeof(ofVec3f) << endl;
 //    cout << "num : " << improcess.num << endl;
@@ -230,6 +223,22 @@ void ofApp::keyPressed(int key){
         }
         else {
             improcess.showImage = true;
+        }
+    }
+    
+    /* 先頭選択用 */
+    if (key == OF_KEY_RIGHT){
+        marker[0].selected++;
+        if (marker[0].selected == 8) marker[0].selected = 0;
+    }
+    if (key == OF_KEY_LEFT){
+        marker[0].selected--;
+        if (marker[0].selected == -1) marker[0].selected = 7;
+    }
+    if (key == OF_KEY_RETURN){
+        marker[marker[0].selected].front++;
+        if (marker[marker[0].selected].front == 3){
+            marker[marker[0].selected].front = 0;
         }
     }
 }
@@ -443,6 +452,14 @@ void markerInfo::showMarker(){
     ofDrawCircle(marker_center.x, marker_center.y, 18);
     ofNoFill();
     ofSetColor(255);
+}
+    
+void markerInfo::highlightFront(){
+    if(active){
+        ofSetColor(100,100,230);
+        ofDrawCircle(point[front],10);
+        ofSetColor(255, 255, 255);
+    }
 }
 
 void homographyClass::drawPoints(vector<cv::Point2f>& points) {
