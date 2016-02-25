@@ -54,13 +54,16 @@ void ofApp::update(){
             for (int j = 0; j < camheight; j++){
                 
                 /* グレースケール化 */
-                improcess.red = improcess.pixels_origin[j*3 * camwidth + i * 3];
-                improcess.green = improcess.pixels_origin[j*3 * camwidth + i * 3 + 1];
-                improcess.blue = improcess.pixels_origin[j*3 * camwidth + i * 3 + 2];
+                improcess.red = improcess.pixels_origin[j*3 * camwidth + i * 3];    //どうせ欲しいのは赤外なので赤だけで良い？
+//                improcess.green = improcess.pixels_origin[j*3 * camwidth + i * 3 + 1];
+//                improcess.blue = improcess.pixels_origin[j*3 * camwidth + i * 3 + 2];
                 
                 /* 二値化 */
-                if ((improcess.red + improcess.green + improcess.blue) / 3 > 245){
-                    improcess.pixels_bin[j* camwidth + i] = 255;
+//                if ((improcess.red + improcess.green + improcess.blue) / 3 > 245){
+//                    improcess.pixels_bin[j* camwidth + i] = 255;
+//                }
+                if (improcess.red > 245){
+                    improcess.pixels_bin[j*camwidth + i] = 255;
                 }
                 else{
                     improcess.pixels_bin[j* camwidth + i] = 0;
@@ -89,6 +92,11 @@ void ofApp::update(){
             for (int j = 0; j < improcess.labels.cols; j++){
                 region_number = improcess.labels(i,j);          //画素アクセスの回数を減らすために退避
                 if(region_number != 0){
+//                improcess.binFbo.begin();
+//                    ofSetColor(255,0,0);
+//                    ofDrawRectangle(i, j, 1, 1);
+//                    ofSetColor(255, 255, 255);
+//                improcess.binFbo.end();
                 improcess.center_point[region_number].x += j;
                 improcess.center_point[region_number].y += i;
                 improcess.center_point[region_number].z += 1;   //足した回数を記憶(後で割る)
@@ -138,6 +146,7 @@ void ofApp::update(){
         improcess.camFbo.end();
     }
     
+    int region_number;      //ラベル番号を一時的に保存
     improcess.binFbo.begin();
     {
         improcess.bin.draw(0,0);
@@ -156,6 +165,7 @@ void ofApp::update(){
         for (int i = 0; i < 9; i++){
             if (marker[i].active){
                 marker[i].showMarker();
+                marker[i].highlightFront();
                 //cout << "show [" << i << "]" << endl;
             }
         }
@@ -170,8 +180,8 @@ void ofApp::update(){
         for (int i = 0; i < 8; i++){
             if (marker[i].active){
                 //cout << "marker[" << i << "] : (" << marker[i].marker_center.x << "," << marker[i].marker_center.y << ")" << endl;
-                marker[i].pointStr = "marker[" + ofToString(i) + "] : (" + ofToString(marker[i].marker_center.x) + ", " + ofToString(marker[i].marker_center.y) + ")";
-                ofDrawBitmapString(marker[i].pointStr, 0, camheight + 10 * i);
+                marker[i].pointStr = "marker[" + ofToString(i) + "] : (" + ofToString(marker[i].marker_center.x) + ", " + ofToString(marker[i].marker_center.y) + ") , angle : " + ofToString(marker[i].angle);
+                ofDrawBitmapString(marker[i].pointStr, 30, camheight + 10 * i);
             }
         }
         
@@ -197,7 +207,7 @@ void ofApp::draw(){
     
     /* 選択中のマーカー */
     string selectedMarker = "selected marker : " + ofToString(marker[0].selected);
-    ofDrawBitmapString(selectedMarker, 50, 10);
+    ofDrawBitmapString(selectedMarker, 150, 10);
     
 //    cout << "length : " << sizeof(improcess.center_point) / sizeof(ofVec3f) << endl;
 //    cout << "num : " << improcess.num << endl;
@@ -301,10 +311,9 @@ void ofApp::mousePressed(int x, int y, int button){
     /* マーカー認識領域の設定 */
     /* 長方形領域の二点(init_region[])を指定する、pointSet(staticメンバ)が一時的なインデックスになる */
     for (int i = 0; i < 8; i++){
-        if (marker[i].marker_initializing == true && y > cam_margin + camheight - 10){
+        if (marker[i].marker_initializing == true){
             marker[0].drawing = true;
             /* 画像上の座標に変換(右辺) */
-            //cout << "marker[0].pointSet : " << marker[0].pointSet << endl;
             marker[i].init_region[marker[0].pointSet] = ofVec2f(x - cam_margin,y - cam_margin - camheight);
             marker[0].mouse_position = ofVec2f(x + 1, y + 1); //領域選択の際に指定する二点目を仮に入れておく
             if (marker[0].pointSet == 1){
@@ -378,7 +387,7 @@ void markerInfo::init(ofVec3f *markerPoints){    //個体を認識するため�
 void markerInfo::drawRegion(){
     ofSetColor(30,30,150,70);
     ofFill();
-    ofDrawRectangle(init_region[0].x, init_region[0].y + cam_margin, mouse_position.x - init_region[0].x - cam_margin, mouse_position.y - init_region[0].y - camheight - cam_margin);
+    ofDrawRectangle(init_region[0].x, init_region[0].y, mouse_position.x - init_region[0].x - cam_margin, mouse_position.y - init_region[0].y - camheight - cam_margin);
     ofSetColor(255);
     ofNoFill();
 }
@@ -430,18 +439,18 @@ void markerInfo::update(ofVec3f *markerPoints, int array_length){
                     min_index = j;
                 }
             }
-            
-            if (exist){
-                point[i] = markerPoints[min_index];
-            }
-            else {
-                point[i] = prev_point[i];  //見つからなかった場合(前と同じ位置とする　本当は他のマーカーの進んだベクトル分足したい)
-            }
+        }
+        if (exist){
+            point[i] = markerPoints[min_index];
             prev_point[i] = point[i];
+        }
+        else {
+            point[i] = prev_point[i];  //見つからなかった場合(前と同じ位置とする　本当は他のマーカーの進んだベクトル分足したい)
         }
     }
     
-    calcCenter();  //重心も更新
+    calcCenter();  //重心と角度も更新
+    calcAngle();
 }
 
 void markerInfo::showMarker(){
@@ -510,6 +519,7 @@ int labelingClass::labeling(const cv::Mat& image,cv::Mat_<int>& label){
             }
             else{
                 parents.push_back(index++);
+                
             }
         }
     }
@@ -543,6 +553,7 @@ void imageProcess::writePoints(){      //ラベリング後に重心を求め、
     ofSetColor(200, 200, 200);
     
     int limit;
+    int counter = 0;
     if (num > 15){
         limit = 15;
     }
@@ -554,12 +565,13 @@ void imageProcess::writePoints(){      //ラベリング後に重心を求め、
         if (center_point[i].z != 0){
             position = ofToString(i) + " : ";
             position += ofToString(center_point[i]);
-            ofDrawBitmapString(position,30 , 15 * i );
+            ofDrawBitmapString(position,30 , 15 * counter + 20 );
+            counter++;
         }
-        else {
-            position = ofToString(i) + " : none";
-            ofDrawBitmapString(position,30 , 15 * i );
-        }
+//        else {
+//            position = ofToString(i) + " : none";
+//            ofDrawBitmapString(position,30 , 15 * i );
+//        }
     }
     ofSetColor(255);
 }

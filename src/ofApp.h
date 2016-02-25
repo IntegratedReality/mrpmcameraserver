@@ -8,10 +8,10 @@
 #include <typeinfo>
 #include <string>
 
-constexpr int camwidth = 480;   //macデフォのカメラだと解像度上げた時落ちた(WEBカムだとOK)
-constexpr int camheight = 360;
+constexpr int camwidth = 800;   //対応解像度で使わないとPC上の座標と画像の座標がずれるようなので注意
+constexpr int camheight = 600;
 constexpr int cam_margin = 30;
-const int BUF_LABEL=1024;   //raspiでは領域の再確保が発生するとセグフォ起こしたので大きめに取っておく
+const int BUF_LABEL= 2048;   //raspiでは領域の再確保が発生するとセグフォ起こしたので大きめに取っておく
 const int region = 512;     //ラベリングから受け取る点の最大値(実際の運用時は30とか？)
 const int min_region = 10;   //ラベリングの際にこの数値以下の小さい領域は無視する(ノイズ除去のため)
 const int max_velocity = 100;   //1フレームで進める最大距離(後で計算して決める)
