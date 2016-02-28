@@ -8,13 +8,13 @@
 #include <typeinfo>
 #include <string>
 
-constexpr int camwidth = 480;   //macデフォのカメラだと解像度上げた時落ちた(WEBカムだとOK)
-constexpr int camheight = 360;
+constexpr int camwidth = 800;   //対応解像度で使わないとPC上の座標と画像の座標がずれるようなので注意
+constexpr int camheight = 600;
 constexpr int cam_margin = 30;
-const int BUF_LABEL=1024;   //raspiでは領域の再確保が発生するとセグフォ起こしたので大きめに取っておく
+const int BUF_LABEL= 2048;   //raspiでは領域の再確保が発生するとセグフォ起こしたので大きめに取っておく
 const int region = 512;     //ラベリングから受け取る点の最大値(実際の運用時は30とか？)
 const int min_region = 10;   //ラベリングの際にこの数値以下の小さい領域は無視する(ノイズ除去のため)
-const int max_velocity = 100;   //1フレームで進める最大距離(後で計算して決める)
+const int max_velocity = 300;   //1フレームで進める最大距離(後で計算して決める)
 
 class markerInfo{  //マーカーの座標などを保管しておく
     public :
@@ -24,7 +24,8 @@ class markerInfo{  //マーカーの座標などを保管しておく
         ofVec2f marker_center;  //3点の重心位置
         ofVec2f prev_marker_center; //前のフレームでの重心位置
         ofVec2f velocity;   //(1フレーム辺りの)機体の速度(移動距離)
-        double angle;   //マーカーの方向(値は tan x とする)
+        double angle;   //マーカーの方向(rad単位)
+        int front;          //先頭の座標がpoint[3]の何番目か(角度算出用)
         //char IP;  //各機のIPアドレス
         
         /* 領域指定用 */
@@ -32,6 +33,7 @@ class markerInfo{  //マーカーの座標などを保管しておく
         bool active;   //初期化完了フラグ兼、生きているかどうか
         static int pointSet;   //領域指定の時の一時的な変数
         static bool drawing;    //描画中かどうかのフラグ
+        static int selected;
         ofVec2f init_region[2]; //指定する領域の左上、右下の座標を保管
         static ofVec2f mouse_position;    //描画用に領域指定中のマウス位置を保管
     
@@ -39,8 +41,8 @@ class markerInfo{  //マーカーの座標などを保管しておく
         string pointStr;
     
         /* 関数 */
-        inline void calcAngle(ofVec2f front){   //角度算出
-            angle = (front.x - marker_center.x) / (front.y - marker_center.y);
+        inline void calcAngle(){   //角度算出
+            angle = atan2(-(point[front].y - marker_center.y),point[front].x - marker_center.x);
         }
         inline void calcVelocity(){  //速度算出
             velocity.x = marker_center.x - prev_marker_center.x;
@@ -56,6 +58,7 @@ class markerInfo{  //マーカーの座標などを保管しておく
         void drawRegion();
         void showMarker();
         void update(ofVec3f *markerPoints, int array_length);
+        void highlightFront();
         
         markerInfo(){
             marker_initializing = false;
@@ -82,12 +85,14 @@ class imageProcess{
         int num = 0;
         int previous_num = region;  //一個前のラベル数を保存
         int num_of_light = 0;   //min_region以上の領域の個数
+        int filter_intensity = 1;   //medianフィルターの強度
         cv::Mat_<int> labels = cv::Mat_<int>::zeros(camheight,camwidth);
         cv::Mat bin_mat;    //ofとCVの変換(ラッパー)用
         ofVec3f center_point[region];       //ラベリングされた領域の重心を保管する (x座標,y座標,領域の大きさ)
         void writePoints();
     
         ofTexture camTexture;
+        ofTexture binTexture;
         ofFbo camFbo;
         ofFbo binFbo;
         ofFbo stringFbo;
@@ -119,7 +124,7 @@ class homographyClass{
         bool movingPoint = false;
         
         /* 諸々のフラグ */
-        bool homographyReady = false;
+        bool ready = false;
         bool first = true;
         
         /* 基準点変更時にどの点を変更するのか調べるための関数(どの点が近いのか距離を測定する) */
@@ -344,6 +349,6 @@ class ofApp : public ofBaseApp{
         imageProcess improcess;
         labelingClass labeling;
         homographyClass homography;
-        simulatorClass simulator;
+        //simulatorClass simulator;
 };
 
