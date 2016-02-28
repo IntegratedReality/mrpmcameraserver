@@ -14,7 +14,7 @@ constexpr int cam_margin = 30;
 const int BUF_LABEL= 2048;   //raspiでは領域の再確保が発生するとセグフォ起こしたので大きめに取っておく
 const int region = 512;     //ラベリングから受け取る点の最大値(実際の運用時は30とか？)
 const int min_region = 10;   //ラベリングの際にこの数値以下の小さい領域は無視する(ノイズ除去のため)
-const int max_velocity = 100;   //1フレームで進める最大距離(後で計算して決める)
+const int max_velocity = 300;   //1フレームで進める最大距離(後で計算して決める)
 
 class markerInfo{  //マーカーの座標などを保管しておく
     public :
@@ -42,7 +42,7 @@ class markerInfo{  //マーカーの座標などを保管しておく
     
         /* 関数 */
         inline void calcAngle(){   //角度算出
-            angle = atan((point[front].y - marker_center.y) / (point[front].x - marker_center.x));
+            angle = atan2(-(point[front].y - marker_center.y),point[front].x - marker_center.x);
         }
         inline void calcVelocity(){  //速度算出
             velocity.x = marker_center.x - prev_marker_center.x;
@@ -85,12 +85,14 @@ class imageProcess{
         int num = 0;
         int previous_num = region;  //一個前のラベル数を保存
         int num_of_light = 0;   //min_region以上の領域の個数
+        int filter_intensity = 1;   //medianフィルターの強度
         cv::Mat_<int> labels = cv::Mat_<int>::zeros(camheight,camwidth);
         cv::Mat bin_mat;    //ofとCVの変換(ラッパー)用
         ofVec3f center_point[region];       //ラベリングされた領域の重心を保管する (x座標,y座標,領域の大きさ)
         void writePoints();
     
         ofTexture camTexture;
+        ofTexture binTexture;
         ofFbo camFbo;
         ofFbo binFbo;
         ofFbo stringFbo;
@@ -122,7 +124,7 @@ class homographyClass{
         bool movingPoint = false;
         
         /* 諸々のフラグ */
-        bool homographyReady = false;
+        bool ready = false;
         bool first = true;
         
         /* 基準点変更時にどの点を変更するのか調べるための関数(どの点が近いのか距離を測定する) */
