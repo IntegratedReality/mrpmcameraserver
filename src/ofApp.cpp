@@ -152,7 +152,7 @@ void ofApp::update(){
         labeling.drawRegions(improcess.center_point,improcess.num);
         
         /* マーカーの初期化領域を描画 */
-        if (marker[0].drawing){
+        if (markerInfo::drawing){
             for (int i = 0; i < 8; i++){
                 if (marker[i].marker_initializing == true){
                     marker[i].drawRegion();
@@ -208,7 +208,7 @@ void ofApp::draw(){
     ofDrawBitmapString(fpsString, 10, 10);
     
     /* 選択中のマーカー */
-    string selectedMarker = "selected marker : " + ofToString(marker[0].selected);
+    string selectedMarker = "selected marker : " + ofToString(markerInfo::selected);
     ofDrawBitmapString(selectedMarker, 150, 10);
     
 //    cout << "length : " << sizeof(improcess.center_point) / sizeof(ofVec3f) << endl;
@@ -240,17 +240,17 @@ void ofApp::keyPressed(int key){
     
     /* 先頭選択用 */
     if (key == OF_KEY_RIGHT){
-        marker[0].selected++;
-        if (marker[0].selected == 8) marker[0].selected = 0;
+        markerInfo::selected++;
+        if (markerInfo::selected == 8) marker[0].selected = 0;
     }
     if (key == OF_KEY_LEFT){
-        marker[0].selected--;
-        if (marker[0].selected == -1) marker[0].selected = 7;
+        markerInfo::selected--;
+        if (markerInfo::selected == -1) marker[0].selected = 7;
     }
     if (key == OF_KEY_RETURN){
-        marker[marker[0].selected].front++;
-        if (marker[marker[0].selected].front == 3){
-            marker[marker[0].selected].front = 0;
+        marker[markerInfo::selected].front++;
+        if (marker[markerInfo::selected].front == 3){
+            marker[markerInfo::selected].front = 0;
         }
     }
     
@@ -269,9 +269,9 @@ void ofApp::keyReleased(int key){
 
 //--------------------------------------------------------------
 void ofApp::mouseMoved(int x, int y ){
-    if (marker[0].drawing){
-        marker[0].mouse_position.x = x;    //staticなのでindexは何でもOK
-        marker[0].mouse_position.y = y;
+    if (markerInfo::drawing){
+        markerInfo::mouse_position.x = x;
+        markerInfo::mouse_position.y = y;
     }
 }
 
@@ -321,19 +321,19 @@ void ofApp::mousePressed(int x, int y, int button){
     /* 長方形領域の二点(init_region[])を指定する、pointSet(staticメンバ)が一時的なインデックスになる */
     for (int i = 0; i < 8; i++){
         if (marker[i].marker_initializing == true){
-            marker[0].drawing = true;
+            markerInfo::drawing = true;
             /* 画像上の座標に変換(右辺) */
-            marker[i].init_region[marker[0].pointSet] = ofVec2f(x - cam_margin,y - cam_margin - camheight);
-            marker[0].mouse_position = ofVec2f(x + 1, y + 1); //領域選択の際に指定する二点目を仮に入れておく
-            if (marker[0].pointSet == 1){
+            marker[i].init_region[markerInfo::pointSet] = ofVec2f(x - cam_margin,y - cam_margin - camheight);
+            markerInfo::mouse_position = ofVec2f(x + 1, y + 1); //領域選択の際に指定する二点目を仮に入れておく
+            if (markerInfo::pointSet == 1){
                 marker[i].active = true;
                 marker[i].init(improcess.center_point);
-                marker[0].pointSet = 0; //1の次は0に戻しておく(0 or 1 の２つ)
+                markerInfo::pointSet = 0; //1の次は0に戻しておく(0 or 1 の２つ)
                 marker[i].marker_initializing = false;  //設定終了
-                marker[i].drawing = false;
+                markerInfo::drawing = false;
                 break;
             }
-            marker[i].pointSet++;
+            markerInfo::pointSet++;
             break;
         }
     }
