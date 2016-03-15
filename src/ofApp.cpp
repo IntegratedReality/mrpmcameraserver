@@ -152,7 +152,7 @@ void ofApp::update(){
         labeling.drawRegions(improcess.center_point,improcess.num);
         
         /* マーカーの初期化領域を描画 */
-        if (marker[0].drawing){
+        if (markerInfo::drawing){
             for (int i = 0; i < 8; i++){
                 if (marker[i].marker_initializing == true){
                     marker[i].drawRegion();
@@ -208,7 +208,7 @@ void ofApp::draw(){
     ofDrawBitmapString(fpsString, 10, 10);
     
     /* 選択中のマーカー */
-    string selectedMarker = "selected marker : " + ofToString(marker[0].selected);
+    string selectedMarker = "selected marker : " + ofToString(markerInfo::selected);
     ofDrawBitmapString(selectedMarker, 150, 10);
     
 //    cout << "length : " << sizeof(improcess.center_point) / sizeof(ofVec3f) << endl;
@@ -240,17 +240,17 @@ void ofApp::keyPressed(int key){
     
     /* 先頭選択用 */
     if (key == OF_KEY_RIGHT){
-        marker[0].selected++;
-        if (marker[0].selected == 8) marker[0].selected = 0;
+        markerInfo::selected++;
+        if (markerInfo::selected == 8) marker[0].selected = 0;
     }
     if (key == OF_KEY_LEFT){
-        marker[0].selected--;
-        if (marker[0].selected == -1) marker[0].selected = 7;
+        markerInfo::selected--;
+        if (markerInfo::selected == -1) marker[0].selected = 7;
     }
     if (key == OF_KEY_RETURN){
-        marker[marker[0].selected].front++;
-        if (marker[marker[0].selected].front == 3){
-            marker[marker[0].selected].front = 0;
+        marker[markerInfo::selected].front++;
+        if (marker[markerInfo::selected].front == 3){
+            marker[markerInfo::selected].front = 0;
         }
     }
     
@@ -269,9 +269,9 @@ void ofApp::keyReleased(int key){
 
 //--------------------------------------------------------------
 void ofApp::mouseMoved(int x, int y ){
-    if (marker[0].drawing){
-        marker[0].mouse_position.x = x;    //staticなのでindexは何でもOK
-        marker[0].mouse_position.y = y;
+    if (markerInfo::drawing){
+        markerInfo::mouse_position.x = x;
+        markerInfo::mouse_position.y = y;
     }
 }
 
@@ -296,10 +296,10 @@ void ofApp::mousePressed(int x, int y, int button){
 
         if (homography.first && static_cast<int>(homography.srcPoints.size()) == 4){     //set destination points
             
-            homography.warpedPoints.push_back(cv::Point2f(30,30));
-            homography.warpedPoints.push_back(cv::Point2f(30,30) + cv::Point2f(0,camheight - 60));
-            homography.warpedPoints.push_back(cv::Point2f(30,30) + cv::Point2f(camwidth - 60,camheight - 60));
-            homography.warpedPoints.push_back(cv::Point2f(30,30) + cv::Point2f(camwidth - 60,0));
+            homography.warpedPoints.push_back(cv::Point2f(0,0));
+            homography.warpedPoints.push_back(cv::Point2f(0,0) + cv::Point2f(0,camheight));
+            homography.warpedPoints.push_back(cv::Point2f(0,0) + cv::Point2f(camwidth,camheight));
+            homography.warpedPoints.push_back(cv::Point2f(0,0) + cv::Point2f(camwidth,0));
             
             homography.homographyMat = cv::findHomography(homography.srcPoints, homography.warpedPoints);
             //変換行列の計算はループから外し、変更するときのみ更新する
@@ -308,6 +308,9 @@ void ofApp::mousePressed(int x, int y, int button){
             improcess.camFbo.begin();
                 ofClear(0, 0, 0);
             improcess.camFbo.end();
+            improcess.binFbo.begin();
+                ofClear(0,0,0);
+            improcess.binFbo.end();
             for (int i = 0; i < 4; i++){
                 homography.executeTransform(improcess.homographyCorner[i]);
                 improcess.homographyCorner[i].z = 0;
@@ -321,19 +324,19 @@ void ofApp::mousePressed(int x, int y, int button){
     /* 長方形領域の二点(init_region[])を指定する、pointSet(staticメンバ)が一時的なインデックスになる */
     for (int i = 0; i < 8; i++){
         if (marker[i].marker_initializing == true){
-            marker[0].drawing = true;
+            markerInfo::drawing = true;
             /* 画像上の座標に変換(右辺) */
-            marker[i].init_region[marker[0].pointSet] = ofVec2f(x - cam_margin,y - cam_margin - camheight);
-            marker[0].mouse_position = ofVec2f(x + 1, y + 1); //領域選択の際に指定する二点目を仮に入れておく
-            if (marker[0].pointSet == 1){
+            marker[i].init_region[markerInfo::pointSet] = ofVec2f(x - cam_margin,y - cam_margin - camheight);
+            markerInfo::mouse_position = ofVec2f(x + 1, y + 1); //領域選択の際に指定する二点目を仮に入れておく
+            if (markerInfo::pointSet == 1){
                 marker[i].active = true;
                 marker[i].init(improcess.center_point);
-                marker[0].pointSet = 0; //1の次は0に戻しておく(0 or 1 の２つ)
+                markerInfo::pointSet = 0; //1の次は0に戻しておく(0 or 1 の２つ)
                 marker[i].marker_initializing = false;  //設定終了
-                marker[i].drawing = false;
+                markerInfo::drawing = false;
                 break;
             }
-            marker[i].pointSet++;
+            markerInfo::pointSet++;
             break;
         }
     }
@@ -460,6 +463,7 @@ void markerInfo::update(ofVec3f *markerPoints, int array_length){
     
     calcCenter();  //重心と角度も更新
     calcAngle();
+    calcNormalizedPoint();  //実際の座標に合わせた数値に変換
 }
 
 void markerInfo::showMarker(){
@@ -480,20 +484,23 @@ void markerInfo::showMarker(){
     
 void markerInfo::highlightFront(){
     if(active){
+        ofFill();
         ofSetColor(100,100,230);
         ofDrawCircle(point[front],10);
         ofSetColor(255, 255, 255);
+        ofNoFill();
     }
 }
 
 void homographyClass::drawPoints(vector<cv::Point2f>& points) {
     ofNoFill();
+    ofPushStyle();
     ofSetColor(200, 10, 10);
     for(int i = 0; i < points.size(); i++) {
         ofDrawCircle(points[i].x,points[i].y, 10);
         ofDrawCircle(points[i].x,points[i].y, 1);
     }
-    ofSetColor(255);
+    ofPopStyle();
 }
 
 bool homographyClass::movePoint(vector<cv::Point2f>& points, cv::Point2f point) {
@@ -538,7 +545,6 @@ int labelingClass::labeling(const cv::Mat& image,cv::Mat_<int>& label){
             }
         }
     }
-    //cout << parents.size() << endl;
 
     //再ラベリング
     int regions=relabel(parents);
@@ -553,13 +559,16 @@ int labelingClass::labeling(const cv::Mat& image,cv::Mat_<int>& label){
 
 void labelingClass::drawRegions(ofVec3f* center_points, int num){
     ofFill();
+    ofPushStyle();
+    
     ofSetColor(100, 100, 230);
     for (int i = 0; i < num; i++){
-        if (center_points[i].z != 0){    //簡易的なローパスフィルタ(小さい画素は無視)
+        if (center_points[i].z != 0){    //アクティブでない画素を無視
             ofDrawCircle(center_points[i].x, center_points[i].y, 5);
         }
     }
-    ofSetColor(255, 255, 255);      //色をリセット(これをしないと画像に色が上書きされてしまう)
+    
+    ofPopStyle();
     ofNoFill();
 }
 

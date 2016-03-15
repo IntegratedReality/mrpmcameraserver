@@ -9,5 +9,5 @@ positionDetector3.xcodeproj
 Project.xcconfig
 config.make
 addons.make
-.DS_Store
+/bin/.DS_Store
 openFrameworks-Info.plist
