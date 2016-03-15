@@ -8,9 +8,11 @@
 #include <typeinfo>
 #include <string>
 
-constexpr int camwidth = 800;   //対応解像度で使わないとPC上の座標と画像の座標がずれるようなので注意
-constexpr int camheight = 600;
+constexpr int camwidth = 1280;   //対応解像度で使わないとPC上の座標と画像の座標がずれるようなので注意
+constexpr int camheight = 720;
 constexpr int cam_margin = 30;
+constexpr int field_width = 2700;
+constexpr int field_height = 1800;
 const int BUF_LABEL= 2048;   //raspiでは領域の再確保が発生するとセグフォ起こしたので大きめに取っておく
 const int region = 512;     //ラベリングから受け取る点の最大値(実際の運用時は30とか？)
 const int min_region = 10;   //ラベリングの際にこの数値以下の小さい領域は無視する(ノイズ除去のため)
@@ -24,6 +26,7 @@ class markerInfo{  //マーカーの座標などを保管しておく
         ofVec2f marker_center;  //3点の重心位置
         ofVec2f prev_marker_center; //前のフレームでの重心位置
         ofVec2f velocity;   //(1フレーム辺りの)機体の速度(移動距離)
+        ofVec2f normalized_point;   //実際の長さに合わせて正規化した座標
         double angle;   //マーカーの方向(rad単位)
         int front;          //先頭の座標がpoint[3]の何番目か(角度算出用)
         //char IP;  //各機のIPアドレス
@@ -53,6 +56,9 @@ class markerInfo{  //マーカーの座標などを保管しておく
         }
         inline void calcCenter(){
             marker_center = ofVec2f((point[0].x + point[1].x + point[2].x) / 3, (point[0].y + point[1].y + point[2].y) / 3);
+        }
+        inline void calcNormalizedPoint(){
+            normalized_point = ofVec2f(marker_center.x * field_width/camwidth,marker_center.y * field_height/camheight);
         }
         void init(ofVec3f *markerPoints);   //個体を認識するため、3つの点が含まれる領域を設定
         void drawRegion();

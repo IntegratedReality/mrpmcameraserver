@@ -296,10 +296,10 @@ void ofApp::mousePressed(int x, int y, int button){
 
         if (homography.first && static_cast<int>(homography.srcPoints.size()) == 4){     //set destination points
             
-            homography.warpedPoints.push_back(cv::Point2f(30,30));
-            homography.warpedPoints.push_back(cv::Point2f(30,30) + cv::Point2f(0,camheight - 60));
-            homography.warpedPoints.push_back(cv::Point2f(30,30) + cv::Point2f(camwidth - 60,camheight - 60));
-            homography.warpedPoints.push_back(cv::Point2f(30,30) + cv::Point2f(camwidth - 60,0));
+            homography.warpedPoints.push_back(cv::Point2f(0,0));
+            homography.warpedPoints.push_back(cv::Point2f(0,0) + cv::Point2f(0,camheight));
+            homography.warpedPoints.push_back(cv::Point2f(0,0) + cv::Point2f(camwidth,camheight));
+            homography.warpedPoints.push_back(cv::Point2f(0,0) + cv::Point2f(camwidth,0));
             
             homography.homographyMat = cv::findHomography(homography.srcPoints, homography.warpedPoints);
             //変換行列の計算はループから外し、変更するときのみ更新する
@@ -308,6 +308,9 @@ void ofApp::mousePressed(int x, int y, int button){
             improcess.camFbo.begin();
                 ofClear(0, 0, 0);
             improcess.camFbo.end();
+            improcess.binFbo.begin();
+                ofClear(0,0,0);
+            improcess.binFbo.end();
             for (int i = 0; i < 4; i++){
                 homography.executeTransform(improcess.homographyCorner[i]);
                 improcess.homographyCorner[i].z = 0;
@@ -460,6 +463,7 @@ void markerInfo::update(ofVec3f *markerPoints, int array_length){
     
     calcCenter();  //重心と角度も更新
     calcAngle();
+    calcNormalizedPoint();  //実際の座標に合わせた数値に変換
 }
 
 void markerInfo::showMarker(){
@@ -480,20 +484,23 @@ void markerInfo::showMarker(){
     
 void markerInfo::highlightFront(){
     if(active){
+        ofFill();
         ofSetColor(100,100,230);
         ofDrawCircle(point[front],10);
         ofSetColor(255, 255, 255);
+        ofNoFill();
     }
 }
 
 void homographyClass::drawPoints(vector<cv::Point2f>& points) {
     ofNoFill();
+    ofPushStyle();
     ofSetColor(200, 10, 10);
     for(int i = 0; i < points.size(); i++) {
         ofDrawCircle(points[i].x,points[i].y, 10);
         ofDrawCircle(points[i].x,points[i].y, 1);
     }
-    ofSetColor(255);
+    ofPopStyle();
 }
 
 bool homographyClass::movePoint(vector<cv::Point2f>& points, cv::Point2f point) {
@@ -538,7 +545,6 @@ int labelingClass::labeling(const cv::Mat& image,cv::Mat_<int>& label){
             }
         }
     }
-    //cout << parents.size() << endl;
 
     //再ラベリング
     int regions=relabel(parents);
@@ -553,13 +559,16 @@ int labelingClass::labeling(const cv::Mat& image,cv::Mat_<int>& label){
 
 void labelingClass::drawRegions(ofVec3f* center_points, int num){
     ofFill();
+    ofPushStyle();
+    
     ofSetColor(100, 100, 230);
     for (int i = 0; i < num; i++){
-        if (center_points[i].z != 0){    //簡易的なローパスフィルタ(小さい画素は無視)
+        if (center_points[i].z != 0){    //アクティブでない画素を無視
             ofDrawCircle(center_points[i].x, center_points[i].y, 5);
         }
     }
-    ofSetColor(255, 255, 255);      //色をリセット(これをしないと画像に色が上書きされてしまう)
+    
+    ofPopStyle();
     ofNoFill();
 }
 
