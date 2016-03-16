@@ -1,13 +1,9 @@
 /bin/
-*.make
 *.plist
 *.xcodeproj
 *.xcconfig
 **/.gitkeep
-Makefile
 positionDetector3.xcodeproj
 Project.xcconfig
-config.make
-addons.make
 /bin/.DS_Store
 openFrameworks-Info.plist
