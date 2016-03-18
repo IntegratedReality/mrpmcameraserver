@@ -57,8 +57,8 @@ class markerInfo{  //マーカーの座標などを保管しておく
         inline void calcCenter(){
             marker_center = ofVec2f((point[0].x + point[1].x + point[2].x) / 3, (point[0].y + point[1].y + point[2].y) / 3);
         }
-        inline void calcNormalizedPoint(){
-            normalized_point = ofVec2f(marker_center.x * field_width/camwidth,marker_center.y * field_height/camheight);
+        inline void calcNormalizedPoint(ofVec2f *offset){
+            normalized_point = ofVec2f((marker_center.x - offset[0].x) * field_width/camwidth,(marker_center.y - offset[0].y) * field_height/camheight);
         }
         void init(ofVec3f *markerPoints);   //個体を認識するため、3つの点が含まれる領域を設定
         void drawRegion();
@@ -95,6 +95,8 @@ class imageProcess{
         cv::Mat_<int> labels = cv::Mat_<int>::zeros(camheight,camwidth);
         cv::Mat bin_mat;    //ofとCVの変換(ラッパー)用
         ofVec3f center_point[region];       //ラベリングされた領域の重心を保管する (x座標,y座標,領域の大きさ)
+        ofVec2f usingArea[2];   //使用する範囲を指定(左上と右下)
+        ofVec2f areaSize;
         void writePoints();
     
         ofTexture camTexture;
@@ -108,6 +110,9 @@ class imageProcess{
         /* flags */
         bool isNewframe = false;
         bool showImage = true;
+        bool setCoord = false;  //使用する範囲を指定して座標を確定
+        bool setCoordToggle = false;    //指定する点の切り替え用
+        bool usingAreaDecided = false;
     
         imageProcess(){
             homographyCorner[0] = ofVec3f(0,0,0);

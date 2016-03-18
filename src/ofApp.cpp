@@ -16,9 +16,9 @@ void ofApp::setup(){
     ofSetVerticalSync(true);
     ofSetCircleResolution(12);
     
-    /* ofImageのallocate */
+    /* allocate ofImages */
     improcess.bin.allocate(camwidth, camheight, OF_IMAGE_GRAYSCALE);
-    
+
     improcess.pixels_origin = myCam.getPixels();
     improcess.camTexture = myCam.getTexture();
     improcess.pixels_bin = improcess.bin.getPixels();
@@ -56,13 +56,6 @@ void ofApp::update(){
                 
                 /* グレースケール化 */
                 improcess.red = improcess.pixels_origin[j*3 * camwidth + i * 3];    //どうせ欲しいのは赤外なので赤だけで良い？
-//                improcess.green = improcess.pixels_origin[j*3 * camwidth + i * 3 + 1];
-//                improcess.blue = improcess.pixels_origin[j*3 * camwidth + i * 3 + 2];
-                
-                /* 二値化 */
-//                if ((improcess.red + improcess.green + improcess.blue) / 3 > 245){
-//                    improcess.pixels_bin[j* camwidth + i] = 255;
-//                }
                 if (improcess.red > 245){
                     improcess.pixels_bin[j*camwidth + i] = 255;
                 }
@@ -126,6 +119,7 @@ void ofApp::update(){
         for (int i = 0; i < 8; i++){
             if (marker[i].active){
                 marker[i].update(improcess.center_point, improcess.num);
+                marker[i].calcNormalizedPoint(improcess.usingArea);  //実際の座標に合わせた数値に変換
             }
         }
         improcess.bin.update();
@@ -137,7 +131,22 @@ void ofApp::update(){
         improcess.camFbo.begin();
         {
             improcess.camTexture.draw(improcess.homographyCorner[0], improcess.homographyCorner[1], improcess.homographyCorner[2], improcess.homographyCorner[3]);
-            /* ホモグラフィの基準点を描写 */
+            /* 使用範囲を描画 */
+            if (improcess.usingAreaDecided){
+                ofPushStyle();
+                ofNoFill();
+                ofSetColor(230, 80, 80);
+                ofDrawRectangle(improcess.usingArea[0].x, improcess.usingArea[0].y, improcess.usingArea[1].x - improcess.usingArea[0].x, improcess.usingArea[1].y - improcess.usingArea[0].y);
+                ofPopStyle();
+            }
+            else if (improcess.setCoordToggle){
+                ofPushStyle();
+                ofFill();
+                ofSetColor(230,130,130);
+                ofDrawCircle(improcess.usingArea[0],5);
+                ofPopStyle();
+            }
+            /* ホモグラフィの基準点を描画 */
             if (!homography.srcPoints.empty()){
                 homography.drawPoints(homography.srcPoints);
             }
@@ -238,6 +247,10 @@ void ofApp::keyPressed(int key){
         }
     }
     
+    if (key == ' '){
+        improcess.setCoord = !improcess.setCoord;
+    }
+    
     /* 先頭選択用 */
     if (key == OF_KEY_RIGHT){
         markerInfo::selected++;
@@ -288,7 +301,7 @@ void ofApp::mouseDragged(int x, int y, int button){
 //--------------------------------------------------------------
 void ofApp::mousePressed(int x, int y, int button){
     cv::Point2f cur(x , y);
-    if (!homography.movePoint(homography.srcPoints,cur) && y < cam_margin + camheight + 10){    //10は念のために余分に取っただけ
+    if (!homography.movePoint(homography.srcPoints,cur) && y < cam_margin + camheight + 10 && !improcess.setCoord){    //10は念のために余分に取っただけ
         if (homography.srcPoints.size() < 4){   //4点未満の時しかpush_backはしない
             cv::Point2f cur(x - cam_margin, y - cam_margin);
             homography.srcPoints.push_back(cur);
@@ -338,6 +351,21 @@ void ofApp::mousePressed(int x, int y, int button){
             }
             markerInfo::pointSet++;
             break;
+        }
+    }
+    
+    if (improcess.setCoord){
+        if (!improcess.setCoordToggle){
+            improcess.usingArea[0] = ofVec2f(x - cam_margin,y - cam_margin);
+            improcess.setCoordToggle = true;
+        }
+        else {
+            improcess.usingArea[1] = ofVec2f(x - cam_margin,y - cam_margin);
+            improcess.setCoordToggle = false;
+            improcess.setCoord = false;
+            improcess.usingAreaDecided = true;
+            improcess.areaSize.x = improcess.usingArea[1].x - improcess.usingArea[0].x;
+            improcess.areaSize.y = improcess.usingArea[1].y - improcess.usingArea[0].y;
         }
     }
 }
@@ -463,7 +491,6 @@ void markerInfo::update(ofVec3f *markerPoints, int array_length){
     
     calcCenter();  //重心と角度も更新
     calcAngle();
-    calcNormalizedPoint();  //実際の座標に合わせた数値に変換
 }
 
 void markerInfo::showMarker(){
