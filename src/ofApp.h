@@ -15,7 +15,7 @@ constexpr int field_width = 2700;
 constexpr int field_height = 1800;
 const int BUF_LABEL= 2048;   //raspiでは領域の再確保が発生するとセグフォ起こしたので大きめに取っておく
 const int region = 512;     //ラベリングから受け取る点の最大値(実際の運用時は30とか？)
-const int min_region = 10;   //ラベリングの際にこの数値以下の小さい領域は無視する(ノイズ除去のため)
+const int min_region = 5;   //ラベリングの際にこの数値以下の小さい領域は無視する(ノイズ除去のため)
 const int max_velocity = 300;   //1フレームで進める最大距離(後で計算して決める)
 
 class markerInfo{  //マーカーの座標などを保管しておく
@@ -335,6 +335,15 @@ class simulatorClass{
     
 };
 
+class cameraFps{
+  public:
+    double currentTime;
+    double previousTime;
+    int frameCounter;
+    int fps;
+    void getFps();
+};
+
 class ofApp : public ofBaseApp{
 
 	public:
@@ -360,6 +369,7 @@ class ofApp : public ofBaseApp{
         imageProcess improcess;
         labelingClass labeling;
         homographyClass homography;
+        cameraFps camFps;
         //simulatorClass simulator;
 };
 

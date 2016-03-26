@@ -56,7 +56,7 @@ void ofApp::update(){
                 
                 /* グレースケール化 */
                 improcess.red = improcess.pixels_origin[j*3 * camwidth + i * 3];    //どうせ欲しいのは赤外なので赤だけで良い？
-                if (improcess.red > 245){
+                if (improcess.red > 240){
                     improcess.pixels_bin[j*camwidth + i] = 255;
                 }
                 else{
@@ -123,6 +123,8 @@ void ofApp::update(){
             }
         }
         improcess.bin.update();
+        
+        camFps.getFps();    //カメラの実際のfpsを出力
     }
     
     /* fbo(GPU)による描画処理 */
@@ -486,6 +488,17 @@ void markerInfo::update(ofVec3f *markerPoints, int array_length){
         }
         else {
             point[i] = prev_point[i];  //見つからなかった場合(前と同じ位置とする　本当は他のマーカーの進んだベクトル分足したい)
+            cout << "not found" << endl;
+        }
+        /* debug */
+        int dist[i];
+        dist[0] = distance(point[0],point[1]);
+        dist[1] = distance(point[1],point[2]);
+        dist[2] = distance(point[2],point[0]);
+        for (int i = 0; i < 3; i++){
+            if (dist[i] < 1){
+                cout << "** marker duplicated **" << endl;
+            }
         }
     }
     
@@ -622,6 +635,20 @@ void imageProcess::writePoints(){      //ラベリング後に重心を求め、
     }
     ofSetColor(255);
 }
+
+void cameraFps::getFps(){
+    currentTime = ofGetElapsedTimef();
+    if (currentTime - previousTime >= 1.0){
+        fps = frameCounter;
+        cout << "FPS(camera) : " << fps << endl;
+        frameCounter = 0;
+        previousTime = currentTime;
+    }
+    else {
+        frameCounter++;
+    }
+}
+
 
 void simulatorClass::markerGen(ofVec2f center){
     drawCube(ofVec2f(center.x + 5, center.y));
