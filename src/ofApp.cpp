@@ -68,6 +68,8 @@ void ofApp::update(){
         if (improcess.filter_intensity != 0){
             for (int i = 0; i < improcess.filter_intensity; i++){
                 ofxCv::erode(improcess.bin);
+            }
+            for (int i = 0; i < improcess.filter_intensity; i++){
                 ofxCv::dilate(improcess.bin);
             }
         }
