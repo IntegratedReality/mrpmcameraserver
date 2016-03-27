@@ -146,10 +146,11 @@ class homographyClass{
         /* 座標に対しホモグラフィ行列を適用する関数 */
         inline void executeTransform(ofVec3f &input){
             // 変換行列をかけるベクトルは(x,y,1)の形で、3項目は(省略されているが)1をかけている
-            input.x = homographyMat.at<double>(0,0) * input.x + homographyMat.at<double>(0,1) * input.y + homographyMat.at<double>(0,2);
-            input.y = homographyMat.at<double>(1,0) * input.x + homographyMat.at<double>(1,1) * input.y + homographyMat.at<double>(1,2);
-            //input.z = homographyMat.at<double>(2,0) * input.x + homographyMat.at<double>(2,1) * input.y + homographyMat.at<double>(2,2);
-            //z座標は使わないし毎回初期化するので意味ない
+            double x = input.x; //変数を退避
+            double y = input.y;
+            double scale = homographyMat.at<double>(2,0) * x + homographyMat.at<double>(2,1) * y + 1;
+            input.x = (homographyMat.at<double>(0,0) * x + homographyMat.at<double>(0,1) * y + homographyMat.at<double>(0,2));
+            input.y = (homographyMat.at<double>(1,0) * x + homographyMat.at<double>(1,1) * y + homographyMat.at<double>(1,2));
         }
 };
 

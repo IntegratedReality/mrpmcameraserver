@@ -313,13 +313,13 @@ void ofApp::mousePressed(int x, int y, int button){
         }
 
         if (homography.first && static_cast<int>(homography.srcPoints.size()) == 4){     //set destination points
-            
+            /* 左上から反時計回りに */
             homography.warpedPoints.push_back(cv::Point2f(0,0));
             homography.warpedPoints.push_back(cv::Point2f(0,0) + cv::Point2f(0,camheight));
             homography.warpedPoints.push_back(cv::Point2f(0,0) + cv::Point2f(camwidth,camheight));
             homography.warpedPoints.push_back(cv::Point2f(0,0) + cv::Point2f(camwidth,0));
             
-            homography.homographyMat = cv::findHomography(homography.srcPoints, homography.warpedPoints);
+            homography.homographyMat = cv::getPerspectiveTransform(homography.srcPoints, homography.warpedPoints);
             //変換行列の計算はループから外し、変更するときのみ更新する
             
             //入力映像の変換用
