@@ -8,8 +8,8 @@
 #include <typeinfo>
 #include <string>
 
-constexpr int camwidth = 1280;   //対応解像度で使わないとPC上の座標と画像の座標がずれるようなので注意
-constexpr int camheight = 720;
+constexpr int camwidth = 640;   //対応解像度で使わないとPC上の座標と画像の座標がずれるようなので注意
+constexpr int camheight = 480;
 constexpr int cam_margin = 30;
 constexpr int field_width = 2700;
 constexpr int field_height = 1800;

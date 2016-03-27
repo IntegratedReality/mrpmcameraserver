@@ -12,9 +12,8 @@ void ofApp::setup(){
     
     myCam.setDeviceID(0);
     myCam.initGrabber(camwidth, camheight);
-    ofSetFrameRate(40);
-    ofSetVerticalSync(true);
-    ofSetCircleResolution(12);
+//    ofSetVerticalSync(true);
+    ofSetCircleResolution(8);
     
     /* allocate ofImages */
     improcess.bin.allocate(camwidth, camheight, OF_IMAGE_GRAYSCALE);
@@ -67,8 +66,10 @@ void ofApp::update(){
 
         /***** labeling~ *****/
         if (improcess.filter_intensity != 0){
-            ofxCv::erode(improcess.bin,improcess.filter_intensity);
-            ofxCv::dilate(improcess.bin, improcess.filter_intensity);
+            for (int i = 0; i < improcess.filter_intensity; i++){
+                ofxCv::erode(improcess.bin);
+                ofxCv::dilate(improcess.bin);
+            }
         }
         improcess.bin_mat = ofxCv::toCv(improcess.bin);
         improcess.num = labeling.labeling(improcess.bin_mat, improcess.labels);       //ラベリング実行
@@ -156,7 +157,7 @@ void ofApp::update(){
         improcess.camFbo.end();
     }
     
-    int region_number;      //ラベル番号を一時的に保存
+    //int region_number;      //ラベル番号を一時的に保存
     improcess.binFbo.begin();
     {
         improcess.binTexture.draw(improcess.homographyCorner[0], improcess.homographyCorner[1], improcess.homographyCorner[2], improcess.homographyCorner[3]);
@@ -580,8 +581,12 @@ int labelingClass::labeling(const cv::Mat& image,cv::Mat_<int>& label){
                 parents.pop_back();
             }
             else{
+                /* 点が多すぎる時のエラー処理(必要そうなら入れる) */
+//                if (index > BUF_LABEL - 50){
+//                    cout << "labeling error" << endl;
+//                    return 0;
+//                }
                 parents.push_back(index++);
-                
             }
         }
     }
