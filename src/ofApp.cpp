@@ -55,7 +55,7 @@ void ofApp::update(){
                 
                 /* グレースケール化 */
                 improcess.red = improcess.pixels_origin[j*3 * camwidth + i * 3];    //どうせ欲しいのは赤外なので赤だけで良い？
-                if (improcess.red > 200){
+                if (improcess.red > 60){
                     improcess.pixels_bin[j*camwidth + i] = 255;
                 }
                 else{
