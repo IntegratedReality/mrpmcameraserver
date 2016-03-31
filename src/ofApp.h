@@ -3,6 +3,7 @@
 #include "ofMain.h"
 #include "ofxCv.h"
 #include "ofxOpenCv.h"
+#include "CameraSender.h"
 #include <cmath>
 #include <vector>
 #include <typeinfo>
@@ -371,6 +372,6 @@ class ofApp : public ofBaseApp{
         labelingClass labeling;
         homographyClass homography;
         cameraFps camFps;
-        //simulatorClass simulator;
+        CameraSender oscSender;
 };
 
