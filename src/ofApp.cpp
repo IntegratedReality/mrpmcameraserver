@@ -10,7 +10,7 @@ ofVec2f markerInfo::mouse_position;
 void ofApp::setup(){
     ofBackground(50, 50, 50);
     
-    myCam.setDeviceID(0);
+    myCam.setDeviceID(1);
     myCam.initGrabber(camwidth, camheight);
 //    ofSetVerticalSync(true);
     ofSetCircleResolution(8);
@@ -55,7 +55,7 @@ void ofApp::update(){
                 
                 /* グレースケール化 */
                 improcess.red = improcess.pixels_origin[j*3 * camwidth + i * 3];    //どうせ欲しいのは赤外なので赤だけで良い？
-                if (improcess.red > 240){
+                if (improcess.red > 200){
                     improcess.pixels_bin[j*camwidth + i] = 255;
                 }
                 else{
