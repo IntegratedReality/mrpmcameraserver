@@ -18,6 +18,7 @@ const int BUF_LABEL= 2048;   //raspiでは領域の再確保が発生すると�
 const int region = 512;     //ラベリングから受け取る点の最大値(実際の運用時は30とか？)
 const int min_region = 5;   //ラベリングの際にこの数値以下の小さい領域は無視する(ノイズ除去のため)
 const int max_velocity = 300;   //1フレームで進める最大距離(後で計算して決める)
+const int bin_threshold = 100;  //二値化の閾値
 
 class markerInfo{  //マーカーの座標などを保管しておく
     public :
