@@ -8,3 +8,4 @@ positionDetector3.xcodeproj
 Project.xcconfig
 /bin/.DS_Store
 openFrameworks-Info.plist
+*.DS_Store
