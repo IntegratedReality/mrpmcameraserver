@@ -13,14 +13,14 @@ ofVec2f markerInfo::mouse_position;
 void ofApp::setup(){
     ofBackground(50, 50, 50);
     
-    myCam.setDeviceID(0);
+    myCam.setDeviceID(1);
     myCam.setup(camwidth, camheight);
     ofSetVerticalSync(true);
     ofSetCircleResolution(8);
     
     /* calibrate cam */
     calib.calibration.setFillFrame(true); // true by default
-    calib.calibration.load("mbp-2011-isight.yml");
+    calib.calibration.load("calibration.yml");
     ofxCv::imitate(calib.undistorted, myCam);
     
     /* allocate ofImages */
