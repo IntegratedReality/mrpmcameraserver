@@ -1,5 +1,8 @@
 #include "ofApp.h"
 
+using namespace ofxCv;
+using namespace cv;
+
 /* スタティック変数の定義 */
 int markerInfo::pointSet = 0;
 int markerInfo::selected = 0;
@@ -11,15 +14,20 @@ void ofApp::setup(){
     ofBackground(50, 50, 50);
     
     myCam.setDeviceID(1);
-    myCam.initGrabber(camwidth, camheight);
-//    ofSetVerticalSync(true);
+    myCam.setup(camwidth, camheight);
+    ofSetVerticalSync(true);
     ofSetCircleResolution(8);
+    
+    /* calibrate cam */
+    calib.calibration.setFillFrame(true); // true by default
+    calib.calibration.load("calibration.yml");
+    ofxCv::imitate(calib.undistorted, myCam);
     
     /* allocate ofImages */
     improcess.bin.allocate(camwidth, camheight, OF_IMAGE_GRAYSCALE);
 
-    improcess.pixels_origin = myCam.getPixels();
-    improcess.camTexture = myCam.getTexture();
+    improcess.pixels_origin = calib.undistorted.getPixels();
+    improcess.camTexture = calib.undistorted.getTexture();
     improcess.pixels_bin = improcess.bin.getPixels();
     improcess.binTexture = improcess.bin.getTexture();
     
@@ -50,6 +58,10 @@ void ofApp::update(){
     myCam.update();
     
     if (myCam.isFrameNew()){
+        
+        calib.calibration.undistort(ofxCv::toCv(myCam), ofxCv::toCv(calib.undistorted));
+        calib.undistorted.update();
+        
         for (int i = 0 ; i < camwidth; i++){
             for (int j = 0; j < camheight; j++){
                 

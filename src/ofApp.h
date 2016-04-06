@@ -347,6 +347,12 @@ class cameraFps{
     void getFps();
 };
 
+class camCalib{
+  public:
+    ofImage undistorted;
+    ofxCv::Calibration calibration;
+};
+
 class ofApp : public ofBaseApp{
 
 	public:
@@ -374,5 +380,6 @@ class ofApp : public ofBaseApp{
         homographyClass homography;
         cameraFps camFps;
         CameraSender oscSender;
+        camCalib calib;
 };
 
