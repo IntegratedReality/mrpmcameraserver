@@ -60,7 +60,8 @@ class markerInfo{  //マーカーの座標などを保管しておく
             marker_center = ofVec2f((point[0].x + point[1].x + point[2].x) / 3, (point[0].y + point[1].y + point[2].y) / 3);
         }
         inline void calcNormalizedPoint(ofVec2f *offset){
-            normalized_point = ofVec2f((marker_center.x - offset[0].x) * field_width/camwidth,(marker_center.y - offset[0].y) * field_height/camheight);
+            //normalized_point = ofVec2f((-marker_center.x + offset[0].x) * field_width/2700,(marker_center.y - offset[0].y) * field_height/1800);
+            normalized_point = ofVec2f((marker_center.y - offset[0].y) * field_height/(offset[1].y - offset[0].y),(-marker_center.x + offset[1].x) * field_width/(offset[1].x - offset[0].x));
         }
         void init(ofVec3f *markerPoints);   //個体を認識するため、3つの点が含まれる領域を設定
         void drawRegion();

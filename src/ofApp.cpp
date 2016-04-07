@@ -131,7 +131,7 @@ void ofApp::update(){
                 }
             }
         }
-        for (int i = 0; i < 8; i++){
+        for (int i = 0; i < 6; i++){
             if (marker[i].active){
                 marker[i].update(improcess.center_point, improcess.num);
                 marker[i].calcNormalizedPoint(improcess.usingArea);  //実際の座標に合わせた数値に変換
@@ -205,7 +205,7 @@ void ofApp::update(){
         for (int i = 0; i < 8; i++){
             if (marker[i].active){
                 //cout << "marker[" << i << "] : (" << marker[i].marker_center.x << "," << marker[i].marker_center.y << ")" << endl;
-                marker[i].pointStr = "marker[" + ofToString(i) + "] : (" + ofToString(marker[i].marker_center.x) + ", " + ofToString(marker[i].marker_center.y) + ") , angle : " + ofToString(marker[i].angle);
+                marker[i].pointStr = "marker[" + ofToString(i) + "] : (" + ofToString(marker[i].normalized_point.x) + ", " + ofToString(marker[i].normalized_point.y) + ") , angle : " + ofToString(marker[i].angle);
                 ofDrawBitmapString(marker[i].pointStr, 30, camheight + 10 * i);
             }
         }
@@ -326,10 +326,10 @@ void ofApp::mousePressed(int x, int y, int button){
 
         if (homography.first && static_cast<int>(homography.srcPoints.size()) == 4){     //set destination points
             /* 左上から反時計回りに */
-            homography.warpedPoints.push_back(cv::Point2f(0,0));
-            homography.warpedPoints.push_back(cv::Point2f(0,0) + cv::Point2f(0,400));
-            homography.warpedPoints.push_back(cv::Point2f(0,0) + cv::Point2f(600,400));
-            homography.warpedPoints.push_back(cv::Point2f(0,0) + cv::Point2f(600,0));
+            homography.warpedPoints.push_back(cv::Point2f(0,10));
+            homography.warpedPoints.push_back(cv::Point2f(0,10) + cv::Point2f(0,426));
+            homography.warpedPoints.push_back(cv::Point2f(0,10) + cv::Point2f(639,426));
+            homography.warpedPoints.push_back(cv::Point2f(0,10) + cv::Point2f(639,0));
             
             homography.homographyMat = cv::getPerspectiveTransform(homography.srcPoints, homography.warpedPoints);
             //変換行列の計算はループから外し、変更するときのみ更新する
