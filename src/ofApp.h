@@ -151,8 +151,8 @@ class homographyClass{
             double x = input.x; //変数を退避
             double y = input.y;
             double scale = homographyMat.at<double>(2,0) * x + homographyMat.at<double>(2,1) * y + 1;
-            input.x = (homographyMat.at<double>(0,0) * x + homographyMat.at<double>(0,1) * y + homographyMat.at<double>(0,2));
-            input.y = (homographyMat.at<double>(1,0) * x + homographyMat.at<double>(1,1) * y + homographyMat.at<double>(1,2));
+            input.x = (homographyMat.at<double>(0,0) * x + homographyMat.at<double>(0,1) * y + homographyMat.at<double>(0,2))/scale;
+            input.y = (homographyMat.at<double>(1,0) * x + homographyMat.at<double>(1,1) * y + homographyMat.at<double>(1,2))/scale;
         }
 };
 
