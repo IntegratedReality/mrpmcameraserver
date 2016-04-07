@@ -51,6 +51,8 @@ void ofApp::setup(){
         ofClear(0,0,0,0);
     }
     improcess.stringFbo.end();
+    
+    oscSender.init("mrpmpi2.local",8000);
 }
 
 //--------------------------------------------------------------
@@ -135,6 +137,7 @@ void ofApp::update(){
             if (marker[i].active){
                 marker[i].update(improcess.center_point, improcess.num);
                 marker[i].calcNormalizedPoint(improcess.usingArea);  //実際の座標に合わせた数値に変換
+                oscSender.sendData(i, 0, marker[i].normalized_point.x, marker[i].normalized_point.y, marker[i].angle);
             }
         }
         improcess.bin.update();
