@@ -9,6 +9,10 @@ int markerInfo::selected = 0;
 bool markerInfo::drawing = false;
 ofVec2f markerInfo::mouse_position;
 
+/* network configuration */
+const char *address = "mrpmpi2.local";
+const int port = 8000;
+
 //--------------------------------------------------------------
 void ofApp::setup(){
     ofBackground(50, 50, 50);
@@ -52,7 +56,9 @@ void ofApp::setup(){
     }
     improcess.stringFbo.end();
     
-    oscSender.init("mrpmpi2.local",8000);
+    /* initialize OSC */
+    oscSender.init(address,port);
+    oscSender.start = std::chrono::system_clock::now(); //initialize time stamp
 }
 
 //--------------------------------------------------------------
@@ -133,10 +139,17 @@ void ofApp::update(){
                 }
             }
         }
+        
+        /***** information about markers *****/
+        oscSender.currentTime = std::chrono::system_clock::now();
+        oscSender.elapsedTime = chrono::duration_cast<chrono::milliseconds>(oscSender.currentTime - oscSender.start);
+        oscSender.timeStamp = static_cast<uint32_t>(oscSender.elapsedTime.count()*1000);
+        //cout << "elapsedTime" << static_cast<uint32_t>(oscSender.elapsedTime.count()*1000) << endl;
+        
         for (int i = 0; i < 6; i++){
             if (marker[i].active){
-                marker[i].update(improcess.center_point, improcess.num);
-                marker[i].calcNormalizedPoint(improcess.usingArea);  //実際の座標に合わせた数値に変換
+                marker[i].update(improcess.center_point, improcess.num);    //update markers
+                marker[i].calcNormalizedPoint(improcess.usingArea);  //convert to mm scale
                 oscSender.sendData(i, 0, marker[i].normalized_point.x, marker[i].normalized_point.y, marker[i].angle);
             }
         }
@@ -269,6 +282,10 @@ void ofApp::keyPressed(int key){
     
     if (key == ' '){
         improcess.setCoord = !improcess.setCoord;
+    }
+    
+    if (key == 'r'){
+        oscSender.start = std::chrono::system_clock::now();
     }
     
     /* 先頭選択用 */
