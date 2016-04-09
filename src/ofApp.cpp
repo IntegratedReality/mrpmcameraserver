@@ -144,13 +144,12 @@ void ofApp::update(){
         oscSender.currentTime = std::chrono::system_clock::now();
         oscSender.elapsedTime = chrono::duration_cast<chrono::milliseconds>(oscSender.currentTime - oscSender.start);
         oscSender.timeStamp = static_cast<uint32_t>(oscSender.elapsedTime.count()*1000);
-        //cout << "elapsedTime" << static_cast<uint32_t>(oscSender.elapsedTime.count()*1000) << endl;
         
         for (int i = 0; i < 6; i++){
             if (marker[i].active){
                 marker[i].update(improcess.center_point, improcess.num);    //update markers
                 marker[i].calcNormalizedPoint(improcess.usingArea);  //convert to mm scale
-                oscSender.sendData(i, 0, marker[i].normalized_point.x, marker[i].normalized_point.y, marker[i].angle);
+                oscSender.sendData(i, oscSender.timeStamp, marker[i].normalized_point.x, marker[i].normalized_point.y, marker[i].angle);
             }
         }
         improcess.bin.update();
