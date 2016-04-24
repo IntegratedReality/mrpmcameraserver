@@ -10,7 +10,7 @@ bool markerInfo::drawing = false;
 ofVec2f markerInfo::mouse_position;
 
 /* network configuration */
-const char *address = "mrpmpi2.local";
+const char *address = "Coconuts.local";
 const int port = 8000;
 
 //--------------------------------------------------------------
@@ -74,7 +74,7 @@ void ofApp::update(){
             for (int j = 0; j < camheight; j++){
                 
                 /* グレースケール化 */
-                improcess.red = improcess.pixels_origin[j*3 * camwidth + i * 3];    //どうせ欲しいのは赤外なので赤だけで良い？
+                improcess.red = improcess.pixels_origin[j*3 * camwidth + i * 3];
                 if (improcess.red > bin_threshold){
                     improcess.pixels_bin[j*camwidth + i] = 255;
                 }
@@ -121,7 +121,7 @@ void ofApp::update(){
         }
         for (int i = 1; i < improcess.num; i++){
             if (improcess.center_point[i].z > min_region){    //簡易的なローパスフィルタ(小さい画素は無視)
-                improcess.center_point[i].x /= (improcess.center_point[i].z);     // 重心を求めるために割り算  +1は0から足した分を補正している
+                improcess.center_point[i].x /= (improcess.center_point[i].z);     // 重心を求めるために割り算
                 improcess.center_point[i].y /= (improcess.center_point[i].z);
             }
             else {
