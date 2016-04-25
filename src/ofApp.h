@@ -51,10 +51,7 @@ class markerInfo{  //マーカーの座標などを保管しておく
 //        }
         inline void calcAngle(){   //角度算出
             angle = atan2(-(point[front].x - marker_center.x),point[front].y - marker_center.y);
-            if (angle < 0){
-                angle += 2*M_PI;
-            }
-            angle = 2*M_PI - angle;
+            angle += M_PI;
         }
         inline void calcVelocity(){  //速度算出
             velocity.x = marker_center.x - prev_marker_center.x;
