@@ -19,9 +19,11 @@ const int region = 512;     //ラベリングから受け取る点の最大値(�
 const int min_region = 5;   //ラベリングの際にこの数値以下の小さい領域は無視する(ノイズ除去のため)
 const int max_velocity = 300;   //1フレームで進める最大距離(後で計算して決める)
 const int bin_threshold = 150;  //二値化の閾値
-const int infra_cam_height = 1;
-const int robot_height = 1;
-const double height_compensation = robot_height/infra_cam_height;
+
+const int infra_cam_height = 2;     //赤外線カメラの高さ
+const int robot_height = 1;     //ロボットの高さ
+//const double height_compensation = (infra_cam_height -  robot_height)/infra_cam_height;     //高さ補正の係数
+const double height_compensation = 1;   //仮置き
 
 class markerInfo{  //マーカーの座標などを保管しておく
     public :
