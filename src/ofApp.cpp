@@ -17,9 +17,9 @@ const int port = 8000;
 void ofApp::setup(){
     ofBackground(50, 50, 50);
     
-    myCam.setDeviceID(1);
+    myCam.setDeviceID(0);
     myCam.setup(camwidth, camheight);
-    ofSetVerticalSync(true);
+    ofSetVerticalSync(false);
     ofSetCircleResolution(8);
     
     /* calibrate cam */
@@ -59,6 +59,8 @@ void ofApp::setup(){
     /* initialize OSC */
     oscSender.init(address,port);
     oscSender.start = std::chrono::system_clock::now(); //initialize time stamp
+    
+    cout << "height_compensation" << height_compensation << endl;
 }
 
 //--------------------------------------------------------------

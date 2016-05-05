@@ -20,10 +20,9 @@ const int min_region = 5;   //ラベリングの際にこの数値以下の小�
 const int max_velocity = 300;   //1フレームで進める最大距離(後で計算して決める)
 const int bin_threshold = 150;  //二値化の閾値
 
-const int infra_cam_height = 2;     //赤外線カメラの高さ
-const int robot_height = 1;     //ロボットの高さ
-//const double height_compensation = (infra_cam_height -  robot_height)/infra_cam_height;     //高さ補正の係数
-const double height_compensation = 1;   //仮置き
+const int infra_cam_height = 161.5;     //赤外線カメラの高さ
+const int robot_height = 9;     //ロボットの高さ
+const double height_compensation = ((infra_cam_height -  robot_height)/double(infra_cam_height));     //高さ補正の係数
 
 class markerInfo{  //マーカーの座標などを保管しておく
     public :
