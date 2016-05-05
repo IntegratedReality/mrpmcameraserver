@@ -20,9 +20,9 @@ const int min_region = 5;   //ラベリングの際にこの数値以下の小�
 const int max_velocity = 300;   //1フレームで進める最大距離(後で計算して決める)
 const int bin_threshold = 150;  //二値化の閾値
 
-const int infra_cam_height = 161.5;     //赤外線カメラの高さ
-const int robot_height = 9;     //ロボットの高さ
-const double height_compensation = ((infra_cam_height -  robot_height)/double(infra_cam_height));     //高さ補正の係数
+//const int infra_cam_height = 161.5;     //赤外線カメラの高さ
+//const int robot_height = 9;     //ロボットの高さ
+//const double height_compensation = ((infra_cam_height -  robot_height)/double(infra_cam_height));     //高さ補正の係数
 
 class markerInfo{  //マーカーの座標などを保管しておく
     public :
@@ -70,8 +70,6 @@ class markerInfo{  //マーカーの座標などを保管しておく
         inline void calcNormalizedPoint(ofVec2f *offset){
             //normalized_point = ofVec2f((-marker_center.x + offset[0].x) * field_width/2700,(marker_center.y - offset[0].y) * field_height/1800);
             normalized_point = ofVec2f((marker_center.y - offset[0].y) * field_height/(offset[1].y - offset[0].y),(-marker_center.x + offset[1].x) * field_width/(offset[1].x - offset[0].x));
-            normalized_point.x *= height_compensation;
-            normalized_point.y *= height_compensation;
         }
         void init(ofVec3f *markerPoints);   //個体を認識するため、3つの点が含まれる領域を設定
         void drawRegion();
