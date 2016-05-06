@@ -60,7 +60,6 @@ void ofApp::setup(){
     oscSender.init(address,port);
     oscSender.start = std::chrono::system_clock::now(); //initialize time stamp
     
-    cout << "height_compensation" << height_compensation << endl;
 }
 
 //--------------------------------------------------------------
