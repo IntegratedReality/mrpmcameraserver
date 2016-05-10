@@ -22,6 +22,9 @@ void ofApp::setup(){
     ofSetVerticalSync(false);
     ofSetCircleResolution(8);
     
+    /* load font */
+    font.load("Arial.ttf",18);
+    
     /* calibrate cam */
     calib.calibration.setFillFrame(true); // true by default
     calib.calibration.load("calibration.yml");
@@ -155,7 +158,7 @@ void ofApp::update(){
         }
         improcess.bin.update();
         
-        camFps.getFps();    //カメラの実際のfpsを出力
+        camFps.getFps(oscSender.elapsedTime.count());    //カメラの実際のfpsを出力
     }
     
     /* fbo(GPU)による描画処理 */
@@ -207,7 +210,6 @@ void ofApp::update(){
             if (marker[i].active){
                 marker[i].showMarker();
                 marker[i].highlightFront();
-                //cout << "show [" << i << "]" << endl;
             }
         }
     }
@@ -220,17 +222,42 @@ void ofApp::update(){
         ofSetColor(255, 255, 255);
         for (int i = 0; i < 8; i++){
             if (marker[i].active){
-                //cout << "marker[" << i << "] : (" << marker[i].marker_center.x << "," << marker[i].marker_center.y << ")" << endl;
                 marker[i].pointStr = "marker[" + ofToString(i) + "] : (" + ofToString(marker[i].normalized_point.x) + ", " + ofToString(marker[i].normalized_point.y) + ") , angle : " + ofToString(marker[i].angle);
-                ofDrawBitmapString(marker[i].pointStr, 30, camheight + 10 * i);
+                font.drawString(marker[i].pointStr, 30, camheight+ 20*i);
             }
         }
         
-        string filter_info = "filter intensity : " + ofToString(improcess.filter_intensity);
-        ofDrawBitmapString(filter_info, 330, 20);
+        ofPushStyle();
+        ofSetColor(0, 120, 200);
+        font.drawString("MRPM IRtracker", 30, 50);
+        ofPopStyle();
+        
+        /* fps書き出し */
+        improcess.camFpsString = "fps : " + ofToString(camFps.normalFps) + "       cam fps : " + ofToString(camFps.fps);
+        font.drawString(improcess.camFpsString,300,110);
+        
+        /* filter強度 */
+        improcess.filter_info = "filter intensity : " + ofToString(improcess.filter_intensity);
+        font.drawString(improcess.filter_info, 30, 110);
+        
+        /* 選択中のマーカー */
+        improcess.selectedMarker = "selected marker : " + ofToString(markerInfo::selected);
+        font.drawString(improcess.selectedMarker,30,150);
+        
+        /* 正規化エリア */
+        improcess.normalizedArea1 = "normalized point : (" + ofToString(improcess.usingArea[0].x) + ", " + ofToString(improcess.usingArea[0].y) + ")";
+        improcess.normalizedArea2 = "normalized point : (" + ofToString(improcess.usingArea[1].x) + ", " + ofToString(improcess.usingArea[1].y) + ")";
+        font.drawString(improcess.normalizedArea1, 30, 280);
+        font.drawString(improcess.normalizedArea2, 30, 320);
+        if (improcess.setCoord){
+            ofPushStyle();
+            ofSetColor(200, 50, 50);
+            font.drawString("SETTING NORMALIZED AREA (" + ofToString(improcess.usingAreaConfig) + ")", 30, 200);
+            ofPopStyle();
+        }
         
         /* 重心座標を描写・書き出し */
-        improcess.writePoints();
+//        improcess.writePoints();
     }
     improcess.stringFbo.end();
 }
@@ -244,32 +271,10 @@ void ofApp::draw(){
     }
     improcess.stringFbo.draw(cam_margin + camwidth,cam_margin);
     
-    /* fps書き出し */
-    double fps = ofGetFrameRate();
-    string fpsString = "fps : " + ofToString(fps);
-    ofDrawBitmapString(fpsString, 10, 10);
-    
-    /* 選択中のマーカー */
-    string selectedMarker = "selected marker : " + ofToString(markerInfo::selected);
-    ofDrawBitmapString(selectedMarker, 150, 10);
-    
-//    cout << "length : " << sizeof(improcess.center_point) / sizeof(ofVec3f) << endl;
-//    cout << "num : " << improcess.num << endl;
-    
 }
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
-    int num = key - 49;     //keyはアスキーコードなので、ずらしてやる
-    if (num >= 0 && num < 8){
-        marker[num].marker_initializing = !marker[num].marker_initializing; //bool反転
-        cout << "\ninitializing marker[" << num << "]" << endl;
-        for (int i = 0; i < 8; i ++){
-            if (marker[i].marker_initializing == true && i != num){     //連続で別の番号を押した時のための処理
-                marker[i].marker_initializing = false;
-            }
-        }
-    }
     
     if (key == 's'){
         if (improcess.showImage == true){
@@ -282,6 +287,7 @@ void ofApp::keyPressed(int key){
     
     if (key == ' '){
         improcess.setCoord = !improcess.setCoord;
+        cout << "set coord" << endl;
     }
     
     if (key == 'r'){
@@ -289,26 +295,88 @@ void ofApp::keyPressed(int key){
     }
     
     /* 先頭選択用 */
-    if (key == OF_KEY_RIGHT){
-        markerInfo::selected++;
-        if (markerInfo::selected == 8) marker[0].selected = 0;
-    }
-    if (key == OF_KEY_LEFT){
-        markerInfo::selected--;
-        if (markerInfo::selected == -1) marker[0].selected = 7;
-    }
-    if (key == OF_KEY_RETURN){
-        marker[markerInfo::selected].front++;
-        if (marker[markerInfo::selected].front == 3){
-            marker[markerInfo::selected].front = 0;
+    if (!improcess.setCoord){
+        int num = key - 48;
+        if (num >= 0 && num < 6){
+            marker[num].marker_initializing = !marker[num].marker_initializing; //bool反転
+            cout << "\ninitializing marker[" << num << "]" << endl;
+            for (int i = 0; i < 8; i ++){
+                if (marker[i].marker_initializing == true && i != num){     //連続で別の番号を押した時のための処理
+                    marker[i].marker_initializing = false;
+                }
+            }
+        }
+        
+        if (key == OF_KEY_RIGHT){
+            markerInfo::selected++;
+            if (markerInfo::selected == 8) marker[0].selected = 0;
+        }
+        if (key == OF_KEY_LEFT){
+            markerInfo::selected--;
+            if (markerInfo::selected == -1) marker[0].selected = 7;
+        }
+        if (key == OF_KEY_RETURN){
+            marker[markerInfo::selected].front++;
+            if (marker[markerInfo::selected].front == 3){
+                marker[markerInfo::selected].front = 0;
+            }
+        }
+        
+        if (key == OF_KEY_UP){
+            improcess.filter_intensity++;
+        }
+        if (key == OF_KEY_DOWN && (improcess.filter_intensity != 0)){
+            improcess.filter_intensity--;
         }
     }
-    
-    if (key == OF_KEY_UP){
-        improcess.filter_intensity++;
-    }
-    if (key == OF_KEY_DOWN && (improcess.filter_intensity != 0)){
-        improcess.filter_intensity--;
+    else{
+        if (key == 49){
+            improcess.usingAreaConfig = false;
+            cout << "setting left upper point" << endl;
+        }
+        else if (key == 50){
+            improcess.usingAreaConfig = true;
+            cout << "setting right bottom point" << endl;
+        }
+        
+        if (!improcess.usingAreaConfig){
+            switch (key) {
+                case OF_KEY_UP:
+                    improcess.usingArea[0].y -= 1;
+                    break;
+                case OF_KEY_DOWN:
+                    improcess.usingArea[0].y += 1;
+                    break;
+                case OF_KEY_LEFT:
+                    improcess.usingArea[0].x -= 1;
+                    break;
+                case OF_KEY_RIGHT:
+                    improcess.usingArea[0].x += 1;
+                    break;
+                
+                default:
+                    break;
+            }
+        }
+        else if (improcess.usingAreaConfig){
+            switch (key) {
+                case OF_KEY_UP:
+                    improcess.usingArea[1].y -= 1;
+                    break;
+                case OF_KEY_DOWN:
+                    improcess.usingArea[1].y += 1;
+                    break;
+                case OF_KEY_LEFT:
+                    improcess.usingArea[1].x -= 1;
+                    break;
+                case OF_KEY_RIGHT:
+                    improcess.usingArea[1].x += 1;
+                    break;
+                    
+                default:
+                    break;
+            }
+        }
     }
 }
 
@@ -675,17 +743,17 @@ void imageProcess::writePoints(){      //ラベリング後に重心を求め、
     ofSetColor(255);
 }
 
-void cameraFps::getFps(){
-    currentTime = ofGetElapsedTimef();
-    if (currentTime - previousTime >= 1.0){
+void cameraFps::getFps(double elapsedTime){
+    currentTime = elapsedTime - static_cast<int>(elapsedTime);
+    if (currentTime < previousTime){
         fps = frameCounter;
-        cout << "FPS(camera) : " << fps << endl;
+        normalFps = ofGetFrameRate();
         frameCounter = 0;
-        previousTime = currentTime;
     }
     else {
         frameCounter++;
     }
+    previousTime = currentTime;
 }
 
 

@@ -33,7 +33,11 @@ class markerInfo{  //マーカーの座標などを保管しておく
         ofVec2f prev_marker_center; //前のフレームでの重心位置
         ofVec2f velocity;   //(1フレーム辺りの)機体の速度(移動距離)
         ofVec2f normalized_point;   //実際の長さに合わせて正規化した座標
+        ofVec2f prev_normalized_point = ofVec2f(0,0);
         double angle;   //マーカーの方向(rad単位)
+        double prev_angle = 0;
+        const double noise_floor_angle = 0.1;
+        const double noise_floor_point = 0.3;
         int front;          //先頭の座標がpoint[3]の何番目か(角度算出用)
         //char IP;  //各機のIPアドレス
         
@@ -56,6 +60,12 @@ class markerInfo{  //マーカーの座標などを保管しておく
         inline void calcAngle(){   //角度算出
             angle = atan2(-(point[front].x - marker_center.x),point[front].y - marker_center.y);
             angle += M_PI;
+            if (angle - prev_angle < noise_floor_angle){
+                angle = prev_angle;
+            }
+            else{
+                prev_angle = angle;
+            }
         }
         inline void calcVelocity(){  //速度算出
             velocity.x = marker_center.x - prev_marker_center.x;
@@ -70,6 +80,12 @@ class markerInfo{  //マーカーの座標などを保管しておく
         inline void calcNormalizedPoint(ofVec2f *offset){
             //normalized_point = ofVec2f((-marker_center.x + offset[0].x) * field_width/2700,(marker_center.y - offset[0].y) * field_height/1800);
             normalized_point = ofVec2f((marker_center.y - offset[0].y) * field_height/(offset[1].y - offset[0].y),(-marker_center.x + offset[1].x) * field_width/(offset[1].x - offset[0].x));
+            if ((normalized_point.x - prev_normalized_point.x < noise_floor_point) && (normalized_point.y - prev_normalized_point.y < noise_floor_point)){
+                normalized_point = prev_normalized_point;
+            }
+            else{
+                prev_normalized_point = normalized_point;
+            }
         }
         void init(ofVec3f *markerPoints);   //個体を認識するため、3つの点が含まれる領域を設定
         void drawRegion();
@@ -118,12 +134,21 @@ class imageProcess{
     
         ofVec3f homographyCorner[4];
     
+        /* strings */
+        string filter_info;
+        string fpsString;
+        string selectedMarker;
+        string normalizedArea1;
+        string normalizedArea2;
+        string camFpsString;
+    
         /* flags */
         bool isNewframe = false;
         bool showImage = true;
         bool setCoord = false;  //使用する範囲を指定して座標を確定
         bool setCoordToggle = false;    //指定する点の切り替え用
         bool usingAreaDecided = false;
+        bool usingAreaConfig = false;
     
         imageProcess(){
             homographyCorner[0] = ofVec3f(0,0,0);
@@ -350,10 +375,11 @@ class simulatorClass{
 class cameraFps{
   public:
     double currentTime;
-    double previousTime;
+    double previousTime = 0;
     int frameCounter;
     int fps;
-    void getFps();
+    double normalFps;
+    void getFps(double elapsedTime);
 };
 
 class camCalib{
@@ -390,5 +416,7 @@ class ofApp : public ofBaseApp{
         cameraFps camFps;
         CameraSender oscSender;
         camCalib calib;
+    
+        ofTrueTypeFont font;
 };
 
