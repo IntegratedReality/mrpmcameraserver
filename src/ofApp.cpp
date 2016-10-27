@@ -33,9 +33,9 @@ void ofApp::setup(){
     /* allocate ofImages */
     improcess.bin.allocate(camwidth, camheight, OF_IMAGE_GRAYSCALE);
 
-    improcess.pixels_origin = calib.undistorted.getPixels();
+    improcess.pixels_origin = calib.undistorted.getPixels().getData();
     improcess.camTexture = calib.undistorted.getTexture();
-    improcess.pixels_bin = improcess.bin.getPixels();
+    improcess.pixels_bin = improcess.bin.getPixels().getData();
     improcess.binTexture = improcess.bin.getTexture();
     
     /* initialize FBOs */
