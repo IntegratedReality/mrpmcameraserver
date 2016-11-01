@@ -9,6 +9,7 @@
 #include "Simulator.hpp"
 #include "Labeling.hpp"
 #include "Homography.hpp"
+#include "ImageProcess.hpp"
 
 #include <cmath>
 #include <vector>
@@ -49,7 +50,7 @@ class markerInfo{  //マーカーの座標などを保管しておく
 //        inline void calcAngle(){   //角度算出
 //            angle = atan2(-(point[front].y - marker_center.y),point[front].x - marker_center.x);
 //        }
-        inline void calcAngle(){   //角度算出
+         void calcAngle(){   //角度算出
             angle = atan2(-(point[front].x - marker_center.x),point[front].y - marker_center.y);
             angle += M_PI;
             if (angle - prev_angle < noise_floor_angle){
@@ -59,17 +60,17 @@ class markerInfo{  //マーカーの座標などを保管しておく
                 prev_angle = angle;
             }
         }
-        inline void calcVelocity(){  //速度算出
+         void calcVelocity(){  //速度算出
             velocity.x = marker_center.x - prev_marker_center.x;
             velocity.y = marker_center.y - prev_marker_center.y;
         }
-        inline double distance(ofVec2f a,ofVec2f b){    //二点間の距離(の二乗)
+         double distance(ofVec2f a,ofVec2f b){    //二点間の距離(の二乗)
             return ((a.x - b.x)*(a.x - b.x) + (a.y - b.y)*(a.y - b.y));
         }
-        inline void calcCenter(){
+         void calcCenter(){
             marker_center = ofVec2f((point[0].x + point[1].x + point[2].x) / 3, (point[0].y + point[1].y + point[2].y) / 3);
         }
-        inline void calcNormalizedPoint(ofVec2f *offset){
+        void calcNormalizedPoint(ofVec2f *offset){
             //normalized_point = ofVec2f((-marker_center.x + offset[0].x) * field_width/2700,(marker_center.y - offset[0].y) * field_height/1800);
             normalized_point = ofVec2f((marker_center.y - offset[0].y) * field_height/(offset[1].y - offset[0].y),(-marker_center.x + offset[1].x) * field_width/(offset[1].x - offset[0].x));
             if ((normalized_point.x - prev_normalized_point.x < noise_floor_point) && (normalized_point.y - prev_normalized_point.y < noise_floor_point)){

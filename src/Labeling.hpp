@@ -22,16 +22,16 @@ class labelingClass{
     
     void drawRegions(ofVec3f* point, int nums);
     
-    inline bool isIn(int w,int h,int x,int y);
+    bool isIn(int w,int h,int x,int y);
     
-    inline unsigned int getAt(const cv::Mat& img,int x,int y);
+    unsigned int getAt(const cv::Mat& img,int x,int y);
     
-    inline int compress(std::vector<int>& parents,int a);
+    int compress(std::vector<int>& parents,int a);
     
     //aの属すグループとbの属すグループを併合（併合後の代表を返す）
-    inline int link(std::vector<int>& parents,int a,int b);
+    int link(std::vector<int>& parents,int a,int b);
     //番号とびとびなラベルを0,1,2,...に貼り替え
-    inline int relabel(std::vector<int>& parents);
+    int relabel(std::vector<int>& parents);
     int labeling(const cv::Mat& image,cv::Mat_<int>& label);
     
 };

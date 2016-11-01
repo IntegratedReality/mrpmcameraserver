@@ -149,7 +149,7 @@ void ofApp::update(){
         oscSender.elapsedTime = chrono::duration_cast<chrono::milliseconds>(oscSender.currentTime - oscSender.start);
         oscSender.timeStamp = static_cast<uint32_t>(oscSender.elapsedTime.count()*1000);
         
-        for (int i = 0; i < 6; i++){
+        for (int i = 0; i < num_of_robot; i++){
             if (marker[i].active){
                 marker[i].update(improcess.center_point, improcess.num);    //update markers
                 marker[i].calcNormalizedPoint(improcess.usingArea);  //convert to mm scale
@@ -649,9 +649,3 @@ void cameraFps::getFps(double elapsedTime){
     previousTime = currentTime;
 }
 
-
-void simulatorClass::markerGen(ofVec2f center){
-    drawCube(ofVec2f(center.x + 5, center.y));
-    drawCube(ofVec2f(center.x - 10, center.y + 5));
-    drawCube(ofVec2f(center.x - 10, center.y - 5));
-}

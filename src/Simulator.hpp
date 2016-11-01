@@ -20,7 +20,7 @@ class simulatorClass{
     int interval = 0;
     bool turn = false;
     
-    inline void drawCube(ofVec2f point1);
+    void drawCube(ofVec2f point1);
     void init();
     void movementManager();
 };

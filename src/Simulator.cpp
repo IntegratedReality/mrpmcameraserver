@@ -8,7 +8,7 @@
 
 #include "Simulator.hpp"
 
-inline void simulatorClass::drawCube(ofVec2f point1){
+void simulatorClass::drawCube(ofVec2f point1){
     for (int i = point1.x; i <= point1.x + 3; i++){
         for (int j = point1.y; j <= point1.y + 3; j++){
             pixels_simulation[j * camwidth + i ] = 255;
@@ -46,4 +46,10 @@ void simulatorClass::movementManager(){
     interval++;
 }
 
+
+void simulatorClass::markerGen(ofVec2f center){
+    drawCube(ofVec2f(center.x + 5, center.y));
+    drawCube(ofVec2f(center.x - 10, center.y + 5));
+    drawCube(ofVec2f(center.x - 10, center.y - 5));
+}
 

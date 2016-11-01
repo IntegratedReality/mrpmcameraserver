@@ -13,18 +13,18 @@ labelingClass::labelingClass(){
     parents.reserve(BUF_LABEL);
 }
 
-inline bool labelingClass::isIn(int w,int h,int x,int y)
+bool labelingClass::isIn(int w,int h,int x,int y)
 {
     return 0<=x && x<w && 0<=y && y<h;
 }
 
-inline unsigned int labelingClass::getAt(const cv::Mat& img,int x,int y)
+unsigned int labelingClass::getAt(const cv::Mat& img,int x,int y)
 {
     return int(img.data[y*img.step + x]);   //dataはキャストしないと取れないっぽい
 }
 
 //aの属すグループの代表に向かって経路圧縮（代表を返す）
-inline int labelingClass::compress(std::vector<int>& parents,int a)
+ int labelingClass::compress(std::vector<int>& parents,int a)
 {
     while(a!=parents[a])
     {
@@ -35,7 +35,7 @@ inline int labelingClass::compress(std::vector<int>& parents,int a)
 }
 
 //aの属すグループとbの属すグループを併合（併合後の代表を返す）
-inline int labelingClass::link(std::vector<int>& parents,int a,int b)
+ int labelingClass::link(std::vector<int>& parents,int a,int b)
 {
     a=compress(parents,a);
     b=compress(parents,b);
@@ -46,7 +46,7 @@ inline int labelingClass::link(std::vector<int>& parents,int a,int b)
 }
 
 //番号とびとびなラベルを0,1,2,...に貼り替え
-inline int labelingClass::relabel(std::vector<int>& parents)
+ int labelingClass::relabel(std::vector<int>& parents)
 {
     int index=0;
     for(int k=0;k<(int)parents.size();k++)
