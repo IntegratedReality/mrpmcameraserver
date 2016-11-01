@@ -3,6 +3,7 @@
 #include "ofMain.h"
 #include "ofxCv.h"
 #include "ofxOpenCv.h"
+#include "aruco.h"
 
 #include "Const.hpp"
 #include "CameraSender.h"
@@ -215,5 +216,12 @@ public:
     ofTrueTypeFont font;
     
     cv::Mat cvCamImage;
+    
+    aruco::MarkerDetector md;
+    vector<aruco::Marker> themarkers;
+    cv::Mat theinputimagecopy;
+    const float MarkerSize = -1;
+    std::map<uint32_t,aruco::MarkerPoseTracker> MTracker;
+
 };
 

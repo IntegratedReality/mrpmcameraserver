@@ -10,7 +10,7 @@ bool markerInfo::drawing = false;
 ofVec2f markerInfo::mouse_position;
 
 /* network configuration */
-const char *address = "Coconuts.local";
+const char *address = "192.168.11.4";
 const int port = 8000;
 
 //--------------------------------------------------------------
@@ -63,9 +63,25 @@ void ofApp::setup(){
     oscSender.init(address,port);
     oscSender.start = std::chrono::system_clock::now(); //initialize time stamp
     
+    myCam.update();
+    cvCamImage=ofxCv::toCv(myCam);
+    
     std::thread forAruco([&]{
+        md.setThresholdParams(7, 7);
+        md.setThresholdParamRange(2, 0);
+        md.setDictionary(aruco::Dictionary::getTypeFromString("ARUCO"));
         while(1){
-            std::cout<<"inAruco"<< canIfind <<std::endl;
+            static int prev=1000;
+                // Ok, let's detect
+            themarkers = md.detect(cvCamImage);
+            if(prev != themarkers.size() ){
+                std::cout << themarkers.size() <<" markers detected."<< std::endl;
+                prev = themarkers.size();
+            }
+            
+            //cvCamImage.copyTo(theinputimagecopy);
+              
+            
         }
     });
     forAruco.detach();
