@@ -63,6 +63,13 @@ void ofApp::setup(){
     oscSender.init(address,port);
     oscSender.start = std::chrono::system_clock::now(); //initialize time stamp
     
+    std::thread forAruco([&]{
+        while(1){
+            std::cout<<"inAruco"<< canIfind <<std::endl;
+        }
+    });
+    forAruco.detach();
+    
 }
 
 //--------------------------------------------------------------
@@ -70,8 +77,9 @@ void ofApp::update(){
     myCam.update();
     
     if (myCam.isFrameNew()){
+        cvCamImage=ofxCv::toCv(myCam);
         
-        calib.calibration.undistort(ofxCv::toCv(myCam), ofxCv::toCv(calib.undistorted));
+        calib.calibration.undistort(cvCamImage, ofxCv::toCv(calib.undistorted));
         calib.undistorted.update();
         
         for (int i = 0 ; i < camwidth; i++){
