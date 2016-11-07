@@ -594,7 +594,7 @@ void markerInfo::update(ofVec3f *markerPoints, int array_length){
             cout << "not found" << endl;
         }
         /* debug */
-        int dist[i];
+        int dist[3];
         dist[0] = distance(point[0],point[1]);
         dist[1] = distance(point[1],point[2]);
         dist[2] = distance(point[2],point[0]);

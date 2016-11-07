@@ -9,3 +9,11 @@ bin/.DS_Store
 openFrameworks-Info.plist
 *.DS_Store
 *.app
+icon.rc
+*.VC.db
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+.vs/*
+bin/
