@@ -10,7 +10,7 @@ bool markerInfo::drawing = false;
 ofVec2f markerInfo::mouse_position;
 
 /* network configuration */
-const char *address = "Coconuts.local";
+const char *address = "127.0.0.1";
 const int port = 8000;
 
 //--------------------------------------------------------------
@@ -19,7 +19,7 @@ void ofApp::setup(){
     
     myCam.setDeviceID(0);
     myCam.setup(camwidth, camheight);
-    ofSetVerticalSync(false);
+    ofSetFrameRate(120);
     ofSetCircleResolution(8);
     
     /* load font */
