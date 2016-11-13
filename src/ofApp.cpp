@@ -149,7 +149,7 @@ void ofApp::update(){
         oscSender.elapsedTime = chrono::duration_cast<chrono::milliseconds>(oscSender.currentTime - oscSender.start);
         oscSender.timeStamp = static_cast<uint32_t>(oscSender.elapsedTime.count()*1000);
         
-        for (int i = 0; i < 6; i++){
+        for (int i = 0; i < num_of_robot; i++){
             if (marker[i].active){
                 marker[i].update(improcess.center_point, improcess.num);    //update markers
                 marker[i].calcNormalizedPoint(improcess.usingArea);  //convert to mm scale
@@ -635,113 +635,6 @@ void markerInfo::highlightFront(){
     }
 }
 
-void homographyClass::drawPoints(vector<cv::Point2f>& points) {
-    ofNoFill();
-    ofPushStyle();
-    ofSetColor(200, 10, 10);
-    for(int i = 0; i < points.size(); i++) {
-        ofDrawCircle(points[i].x,points[i].y, 10);
-        ofDrawCircle(points[i].x,points[i].y, 1);
-    }
-    ofPopStyle();
-}
-
-bool homographyClass::movePoint(vector<cv::Point2f>& points, cv::Point2f point) {
-    point.x -= cam_margin;
-    point.y -= cam_margin;
-    for(int i = 0; i < points.size(); i++) {
-        if(distance(points[i],point) < 60) {
-            movingPoint = true;
-            curPoint = &points[i];
-            return true;
-        }
-    }
-    return false;
-}
-
-
-int labelingClass::labeling(const cv::Mat& image,cv::Mat_<int>& label){
-    const int W=image.cols;
-    const int H=image.rows;
-        
-    int index=0;
-    for(int j=0;j<H;j++){
-        for(int i=0;i<W;i++)
-        {
-            //隣接画素（４近傍）との連結チェック
-            unsigned int c=getAt(image,i,j);
-            bool flagA=(isIn(W,H,i-1,j  ) && c==getAt(image,i-1,j  )); //左
-            bool flagB=(isIn(W,H,i  ,j-1) && c==getAt(image,i  ,j-1)); //上
-            
-            //着目画素と連結画素を併合
-            label(j,i)=index;
-            if((flagA|flagB)==true)
-            {
-                parents.push_back(index);
-                if(flagA) label(j,i)=link(parents,label(j,i),label(j  ,i-1));
-                if(flagB) label(j,i)=link(parents,label(j,i),label(j-1,i  ));
-                parents.pop_back();
-            }
-            else{
-                /* 点が多すぎる時のエラー処理(必要そうなら入れる) */
-//                if (index > BUF_LABEL - 50){
-//                    cout << "labeling error" << endl;
-//                    return 0;
-//                }
-                parents.push_back(index++);
-            }
-        }
-    }
-
-    //再ラベリング
-    int regions=relabel(parents);
-    for(int j=0;j<H;j++){
-        for(int i=0;i<W;i++){
-            label(j,i)=parents[label(j,i)];
-        }
-    }
-    parents.clear();    //関数外で定義してるのでリセットしないと要素が増え続けてしまう、vectorのclear()はデータを消すだけでメモリは開放しない
-    return regions;
-}
-
-void labelingClass::drawRegions(ofVec3f* center_points, int num){
-    ofFill();
-    ofPushStyle();
-    
-    ofSetColor(100, 100, 230);
-    for (int i = 0; i < num; i++){
-        if (center_points[i].z != 0){    //アクティブでない画素を無視
-            ofDrawCircle(center_points[i].x, center_points[i].y, 5);
-        }
-    }
-    
-    ofPopStyle();
-    ofNoFill();
-}
-
-void imageProcess::writePoints(){      //ラベリング後に重心を求め、それを表示する
-    string position;
-    int limit;
-    int counter = 0;
-    if (num > 15){
-        limit = 15;
-    }
-    else {
-        limit = num-1;
-    }
-    
-    int i = 1;
-    while (counter < limit && i < region-10){
-        if (center_point[i].z != 0){
-            position = ofToString(i) + " : ";
-            position += ofToString(center_point[i]);
-            ofDrawBitmapString(position,30 , 15 * counter + 20 );
-            counter++;
-        }
-        i++;
-    }
-    ofSetColor(255);
-}
 
 void cameraFps::getFps(double elapsedTime){
     currentTime = elapsedTime - static_cast<int>(elapsedTime);
@@ -756,9 +649,3 @@ void cameraFps::getFps(double elapsedTime){
     previousTime = currentTime;
 }
 
-
-void simulatorClass::markerGen(ofVec2f center){
-    drawCube(ofVec2f(center.x + 5, center.y));
-    drawCube(ofVec2f(center.x - 10, center.y + 5));
-    drawCube(ofVec2f(center.x - 10, center.y - 5));
-}
