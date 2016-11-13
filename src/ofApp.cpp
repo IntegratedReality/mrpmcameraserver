@@ -321,7 +321,7 @@ void ofApp::keyPressed(int key){
     /* 先頭選択用 */
     if (!improcess.setCoord){
         int num = key - 48;
-        if (num >= 0 && num < 6){
+        if (num >= 0 && num < 6){//magicnumber
             marker[num].marker_initializing = !marker[num].marker_initializing; //bool反転
             cout << "\ninitializing marker[" << num << "]" << endl;
             for (int i = 0; i < 8; i ++){
