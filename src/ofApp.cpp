@@ -99,13 +99,13 @@ void ofApp::update(){
         }
         improcess.bin_mat = ofxCv::toCv(improcess.bin);
         improcess.num = labeling.labeling(improcess.bin_mat, improcess.labels);       //ラベリング実行
+        if (improcess.num > region){
+            improcess.num = region - 1;
+        }
         
         /* 各ラベルの重心を求める */
         
         /* 初期化(前回埋めたところだけ消去して節約) */
-        if (improcess.previous_num >= region){  //下で初期化するときに変な領域に入らないように制限
-            improcess.previous_num = region - 1;    //最大値を超えた場合は最大値に設定
-        }
         for (int i = 0; i <= improcess.previous_num; i++){
             improcess.center_point[i] = ofVec3f(0,0,0);     //重心を入れる配列をリセット
         }
@@ -116,7 +116,7 @@ void ofApp::update(){
         for (int i = 0; i < improcess.labels.rows; i++){
             for (int j = 0; j < improcess.labels.cols; j++){
                 region_number = improcess.labels(i,j);          //画素アクセスの回数を減らすために退避
-                if(region_number != 0){
+                if((region_number != 0) && (region_number < region)){
                 improcess.center_point[region_number].x += j;
                 improcess.center_point[region_number].y += i;
                 improcess.center_point[region_number].z += 1;   //足した回数を記憶(後で割る)
