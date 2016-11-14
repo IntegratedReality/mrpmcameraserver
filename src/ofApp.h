@@ -16,7 +16,7 @@ constexpr int field_width = 2700;
 constexpr int field_height = 1800;
 const int BUF_LABEL= 2048;   //raspiでは領域の再確保が発生するとセグフォ起こしたので大きめに取っておく
 const int region = 512;     //ラベリングから受け取る点の最大値(実際の運用時は30とか？)
-const int min_region = 5;   //ラベリングの際にこの数値以下の小さい領域は無視する(ノイズ除去のため)
+const int min_region = 3;   //ラベリングの際にこの数値以下の小さい領域は無視する(ノイズ除去のため)
 const int max_velocity = 300;   //1フレームで進める最大距離(後で計算して決める)
 const int bin_threshold = 150;  //二値化の閾値
 
@@ -37,7 +37,7 @@ class markerInfo{  //マーカーの座標などを保管しておく
         double angle;   //マーカーの方向(rad単位)
         double prev_angle = 0;
         const double noise_floor_angle = 0.1;
-        const double noise_floor_point = 0.3;
+        const double noise_floor_point = 0.1;
         int front;          //先頭の座標がpoint[3]の何番目か(角度算出用)
         //char IP;  //各機のIPアドレス
         
@@ -78,13 +78,13 @@ class markerInfo{  //マーカーの座標などを保管しておく
             marker_center = ofVec2f((point[0].x + point[1].x + point[2].x) / 3, (point[0].y + point[1].y + point[2].y) / 3);
         }
         inline void calcNormalizedPoint(ofVec2f *offset){
-            //normalized_point = ofVec2f((-marker_center.x + offset[0].x) * field_width/2700,(marker_center.y - offset[0].y) * field_height/1800);
             normalized_point = ofVec2f((marker_center.y - offset[0].y) * field_height/(offset[1].y - offset[0].y),(-marker_center.x + offset[1].x) * field_width/(offset[1].x - offset[0].x));
-            if ((normalized_point.x - prev_normalized_point.x < noise_floor_point) && (normalized_point.y - prev_normalized_point.y < noise_floor_point)){
-                normalized_point = prev_normalized_point;
+            //get rid of small flactuation
+            if ((abs(normalized_point.x - prev_normalized_point.x) < noise_floor_point) && (abs(normalized_point.y - prev_normalized_point.y) < noise_floor_point)){
+                normalized_point = prev_normalized_point;   //use previous point (avoid oscillation)
             }
             else{
-                prev_normalized_point = normalized_point;
+                prev_normalized_point = normalized_point;   //update
             }
         }
         void init(ofVec3f *markerPoints);   //個体を認識するため、3つの点が含まれる領域を設定
