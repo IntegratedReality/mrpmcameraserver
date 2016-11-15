@@ -7,6 +7,10 @@
 //
 #pragma once
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 constexpr int camwidth = 640;   //対応解像度で使わないとPC上の座標と画像の座標がずれるようなので注意
 constexpr int camheight = 480;
 constexpr int cam_margin = 30;
