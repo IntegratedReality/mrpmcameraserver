@@ -72,7 +72,7 @@ class markerInfo{  //マーカーの座標などを保管しておく
         }
         void calcNormalizedPoint(ofVec2f *offset){
             //normalized_point = ofVec2f((-marker_center.x + offset[0].x) * field_width/2700,(marker_center.y - offset[0].y) * field_height/1800);
-            normalized_point = ofVec2f((marker_center.y - offset[0].y) * field_height/(offset[1].y - offset[0].y),(-marker_center.x + offset[1].x) * field_width/(offset[1].x - offset[0].x));
+            normalized_point = ofVec2f(field_height - ((marker_center.y - offset[0].y) * field_height/(offset[1].y - offset[0].y)),(field_width - (-marker_center.x + offset[1].x) * field_width/(offset[1].x - offset[0].x)));
             if ((abs(normalized_point.x - prev_normalized_point.x) < noise_floor_point) && (abs(normalized_point.y - prev_normalized_point.y) < noise_floor_point)){
                 normalized_point = prev_normalized_point;   //using previous point(to avoid oscillation)
             }
