@@ -11,9 +11,6 @@ openFrameworks-Info.plist
 *.app
 icon.rc
 *.VC.db
-*.sln
-*.vcxproj
-*.vcxproj.filters
 *.vcxproj.user
 .vs/*
 bin/
