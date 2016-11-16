@@ -11,11 +11,14 @@
 #define M_PI 3.14159265358979323846
 #endif
 
+constexpr int ofwindow_width = 1440;
+constexpr int ofwindow_height = 1000;
+
 constexpr int camwidth = 640;   //対応解像度で使わないとPC上の座標と画像の座標がずれるようなので注意
 constexpr int camheight = 480;
-constexpr int cam_margin = 30;
-constexpr int field_width = 2700;
-constexpr int field_height = 1800;
+constexpr int cam_margin = 10;
+constexpr int field_width = 2440;
+constexpr int field_height = 1600;
 const int BUF_LABEL= 2048;   //raspiでは領域の再確保が発生するとセグフォ起こしたので大きめに取っておく
 const int region = 512;     //ラベリングから受け取る点の最大値(実際の運用時は30とか？)
 const int min_region = 3;   //ラベリングの際にこの数値以下の小さい領域は無視する(ノイズ除去のため)
