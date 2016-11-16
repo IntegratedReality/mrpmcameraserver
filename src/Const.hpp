@@ -11,7 +11,7 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-constexpr int ofwindow_width = 1440;
+constexpr int ofwindow_width = 1340;
 constexpr int ofwindow_height = 1000;
 
 constexpr int camwidth = 640;   //対応解像度で使わないとPC上の座標と画像の座標がずれるようなので注意
