@@ -53,7 +53,7 @@ class markerInfo{  //マーカーの座標などを保管しておく
          void calcAngle(){   //角度算出
             angle = atan2(-(point[front].x - marker_center.x),point[front].y - marker_center.y);
             angle += M_PI;
-            if (angle - prev_angle < noise_floor_angle){
+            if (abs(angle - prev_angle) < noise_floor_angle){
                 angle = prev_angle;
             }
             else{
