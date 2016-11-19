@@ -10,7 +10,7 @@ bool markerInfo::drawing = false;
 ofVec2f markerInfo::mouse_position;
 
 /* network configuration */
-const char *address = "192.168.11.4";
+const char *address = "127.0.0.1";
 const int port = 8000;
 
 //--------------------------------------------------------------
@@ -19,7 +19,7 @@ void ofApp::setup(){
     
     myCam.setDeviceID(0);
     myCam.setup(camwidth, camheight);
-    ofSetVerticalSync(false);
+    ofSetFrameRate(120);
     ofSetCircleResolution(8);
     
     /* load font */
@@ -63,29 +63,6 @@ void ofApp::setup(){
     oscSender.init(address,port);
     oscSender.start = std::chrono::system_clock::now(); //initialize time stamp
     
-    myCam.update();
-    cvCamImage=ofxCv::toCv(myCam);
-    
-    std::thread forAruco([&]{
-        md.setThresholdParams(7, 7);
-        md.setThresholdParamRange(2, 0);
-        md.setDictionary(aruco::Dictionary::getTypeFromString("ARUCO"));
-        while(1){
-            static int prev=1000;
-                // Ok, let's detect
-            themarkers = md.detect(cvCamImage);
-            if(prev != themarkers.size() ){
-                std::cout << themarkers.size() <<" markers detected."<< std::endl;
-                prev = themarkers.size();
-            }
-            
-            //cvCamImage.copyTo(theinputimagecopy);
-              
-            
-        }
-    });
-    forAruco.detach();
-    
 }
 
 //--------------------------------------------------------------
@@ -93,9 +70,8 @@ void ofApp::update(){
     myCam.update();
     
     if (myCam.isFrameNew()){
-        cvCamImage=ofxCv::toCv(myCam);
         
-        calib.calibration.undistort(cvCamImage, ofxCv::toCv(calib.undistorted));
+        calib.calibration.undistort(ofxCv::toCv(myCam), ofxCv::toCv(calib.undistorted));
         calib.undistorted.update();
         
         for (int i = 0 ; i < camwidth; i++){
@@ -123,13 +99,13 @@ void ofApp::update(){
         }
         improcess.bin_mat = ofxCv::toCv(improcess.bin);
         improcess.num = labeling.labeling(improcess.bin_mat, improcess.labels);       //ラベリング実行
+        if (improcess.num > region){
+            improcess.num = region - 1;
+        }
         
         /* 各ラベルの重心を求める */
         
         /* 初期化(前回埋めたところだけ消去して節約) */
-        if (improcess.previous_num >= region){  //下で初期化するときに変な領域に入らないように制限
-            improcess.previous_num = region - 1;    //最大値を超えた場合は最大値に設定
-        }
         for (int i = 0; i <= improcess.previous_num; i++){
             improcess.center_point[i] = ofVec3f(0,0,0);     //重心を入れる配列をリセット
         }
@@ -140,7 +116,7 @@ void ofApp::update(){
         for (int i = 0; i < improcess.labels.rows; i++){
             for (int j = 0; j < improcess.labels.cols; j++){
                 region_number = improcess.labels(i,j);          //画素アクセスの回数を減らすために退避
-                if(region_number != 0){
+                if((region_number != 0) && (region_number < region)){
                 improcess.center_point[region_number].x += j;
                 improcess.center_point[region_number].y += i;
                 improcess.center_point[region_number].z += 1;   //足した回数を記憶(後で割る)
@@ -321,7 +297,7 @@ void ofApp::keyPressed(int key){
     /* 先頭選択用 */
     if (!improcess.setCoord){
         int num = key - 48;
-        if (num >= 0 && num < 6){//magicnumber
+        if (num >= 0 && num < 6){
             marker[num].marker_initializing = !marker[num].marker_initializing; //bool反転
             cout << "\ninitializing marker[" << num << "]" << endl;
             for (int i = 0; i < 8; i ++){
@@ -618,7 +594,7 @@ void markerInfo::update(ofVec3f *markerPoints, int array_length){
             cout << "not found" << endl;
         }
         /* debug */
-        int dist[i];
+        int dist[3];
         dist[0] = distance(point[0],point[1]);
         dist[1] = distance(point[1],point[2]);
         dist[2] = distance(point[2],point[0]);

@@ -110,7 +110,7 @@ void labelingClass::drawRegions(ofVec3f* center_points, int num){
     ofSetColor(100, 100, 230);
     for (int i = 0; i < num; i++){
         if (center_points[i].z != 0){    //アクティブでない画素を無視
-            ofDrawCircle(center_points[i].x, center_points[i].y, 5);
+            ofDrawCircle(center_points[i].x, center_points[i].y, 3);
         }
     }
     
