@@ -63,6 +63,29 @@ void ofApp::setup(){
     oscSender.init(address,port);
     oscSender.start = std::chrono::system_clock::now(); //initialize time stamp
     
+    myCam.update();
+    cvCamImage = ofxCv::toCv(myCam);
+
+    std::thread forAruco([&] {
+      md.setThresholdParams(7, 7);
+      md.setThresholdParamRange(2, 0);
+      md.setDictionary(aruco::Dictionary::getTypeFromString("ARUCO"));
+      while (1) {
+        static int prev = 1000;
+        // Ok, let's detect
+        markers = md.detect(cvCamImage);
+        if (prev != markers.size()) {
+          std::cout << markers.size() << " markers detected." << std::endl;
+          prev = markers.size();
+        }
+
+        //cvCamImage.copyTo(theinputimagecopy);
+
+
+      }
+    });
+    forAruco.detach();
+
 }
 
 //--------------------------------------------------------------
@@ -70,8 +93,11 @@ void ofApp::update(){
     myCam.update();
     
     if (myCam.isFrameNew()){
-        
-        calib.calibration.undistort(ofxCv::toCv(myCam), ofxCv::toCv(calib.undistorted));
+      cvCamImage = ofxCv::toCv(myCam);
+
+      calib.calibration.undistort(cvCamImage, ofxCv::toCv(calib.undistorted));
+
+       /* calib.calibration.undistort(ofxCv::toCv(myCam), ofxCv::toCv(calib.undistorted));*/
         calib.undistorted.update();
         
         for (int i = 0 ; i < camwidth; i++){

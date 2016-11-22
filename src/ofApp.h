@@ -16,6 +16,8 @@
 #include <typeinfo>
 #include <string>
 
+#include <aruco.h>
+
 
 class markerInfo{  //マーカーの座標などを保管しておく
     public :
@@ -211,5 +213,11 @@ class ofApp : public ofBaseApp{
         camCalib calib;
     
         ofTrueTypeFont font;
+
+        aruco::MarkerDetector md;
+        vector<aruco::Marker> markers;
+        cv::Mat cvCamImage,imputimagee_copy;
+        std::map<uint32_t, aruco::MarkerPoseTracker> MTrackr;
+        const float Markersize = -1;
 };
 
